@@ -88,6 +88,17 @@ void FV1::sof(double scale, double offset) {
 	acc = acc * scale + offset;
 }
 
+void FV1::maxx(double* reg_addr, double coefficient) {
+	pacc = acc;
+	double absReg = abs((*reg_addr) * coefficient);
+	acc = max(absReg, abs(acc));
+}
+
+void FV1::ldax(double* reg_addr) {
+	pacc = acc;
+	acc = (*reg_addr);
+}
+
 // increments indexes by one
 // when reaching the end of the buffer, they start again in zero, making a circular buffer
 void FV1::updm(Memory* mem) {
@@ -211,6 +222,26 @@ double* FV1::getAddressOfIdentifier(string id) {
 	}
 	else if (id.compare("reg31") == 0) {
 		return &reg31;
+	}
+
+	return 0;
+}
+
+unsigned int FV1::conditionWithIdentifier(string id) {
+	if (id.compare("run") == 0) {
+		return run;
+	}
+	else if (id.compare("zrc") == 0) {
+		return zrc;
+	}
+	else if (id.compare("zro") == 0) {
+		return zro;
+	}
+	else if (id.compare("gez") == 0) {
+		return gez;
+	}
+	else if (id.compare("neg") == 0) {
+		return neg;
 	}
 
 	return 0;

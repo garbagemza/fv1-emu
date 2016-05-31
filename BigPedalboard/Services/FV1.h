@@ -105,8 +105,14 @@ public:
 	double reg28 = 0;
 	double reg29 = 0;
 	double reg30 = 0;
-
 	double reg31 = 0;
+
+	// conditions for skp instruction
+	const unsigned int run = 1;
+	const unsigned int zrc = 1 << 1;
+	const unsigned int zro = 1 << 2;
+	const unsigned int gez = 1 << 3;
+	const unsigned int neg = 1 << 4;
 
 	void mem(Memory** addr, unsigned int size);
 	void rdax(double regValue, double coefficient);
@@ -120,10 +126,13 @@ public:
 	void sof(double scale, double offset);
 	void fv1log(double coefficient, double constant);
 	void fv1exp(double coefficient, double constant);
+	void maxx(double* reg_addr, double coefficient);
+	void ldax(double* reg_addr);
 
 	// misc
 	void updm(Memory* mem);
 	double* getAddressOfIdentifier(string id);
+	unsigned int conditionWithIdentifier(string id);
 	double* getRegisterAddressWithName(string name);
 	
 };

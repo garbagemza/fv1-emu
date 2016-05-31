@@ -41,11 +41,17 @@ struct Param
 	double* regAddress;
 	Memory* mem;
 
+	// used for skp instruction
+	unsigned int condition;
+	unsigned int skipLines;
+
 	Param() {
 		dir = FV1::Start;
 		doubleValue = 0;
 		regAddress = 0;
 		mem = 0;
+		condition = 0;
+		skipLines = 0;
 	}
 };
 
@@ -61,7 +67,9 @@ enum InstructionType {
 	LOG,
 	EXP,
 	SOF,
-
+	MAXX,
+	LDAX,
+	SKP,
 };
 
 struct Instruction
@@ -74,6 +82,7 @@ struct Instruction
 struct ExecutionVectorResult
 {
 	bool success;
+	map<string, unsigned int> labels;
 	vector<vector<Lexer::Token*>> firstPass;
 	vector<vector<Lexer::Token*>> secondPass;
 };
@@ -98,6 +107,13 @@ struct SpinFile {
 	SpinFile() {
 		passOneSemanticSucceeded = false;
 	}
+};
+
+struct SplitStatementInfo
+{
+	bool shouldSplit;
+	string labelDeclared;
+	vector<Lexer::Token*> secondPassStatement;
 };
 
 class SpinSoundDelegate : public ISoundDelegate {
@@ -163,11 +179,12 @@ VOID					PromptOpenFile();
 VOID					OpenFileForReadAndLoad(LPWSTR filename);
 VOID					LoadFile(HANDLE file, FV1*);
 PassOneResult			PassOneParse(FV1*, vector<vector<Lexer::Token*>>);
-PassTwoResult			PassTwoParse(FV1*, map<string, Param>, map<string, Memory*>, vector<vector<Lexer::Token*>>);
+PassTwoResult			PassTwoParse(FV1*, map<string, Param>, map<string, Memory*>, map<string, unsigned int>, vector<vector<Lexer::Token*>>);
 ExecutionVectorResult	beginLexicalAnalysis(LPVOID lpBuffer, DWORD size);
 ExecutionVectorResult	generateExecutionVector(vector<vector<Lexer::Token*>>);
 BOOL					isFirstPassStatement(vector<Lexer::Token*>);
-BOOL					LoadInstructionWithInstructionLine(FV1*, map<string, Param>, map<string, Memory*>, vector<Lexer::Token*>, Instruction*);
+SplitStatementInfo		shouldSplitStatements(vector<Lexer::Token*>);
+BOOL					LoadInstructionWithInstructionLine(FV1*, map<string, Param>, map<string, Memory*>, map<string, unsigned int>, vector<Lexer::Token*>, unsigned int, Instruction*);
 InstructionType			InstructionTypeWithString(string&);
 FV1::MemoryPosition		DirectionSpecificationWithType(Lexer::TOKEN_TYPE&);
 
@@ -367,7 +384,7 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 void SpinSoundDelegate::willBeginPlay() {
 
-	generator = SoundUtilities::createSignalGenerator(SignalType::Square, 200.0);
+	generator = SoundUtilities::createSignalGenerator(SignalType::Sinusoidal, 200.0);
 	timer = TimerManager::createTimer(44100);
 	
 	if (this->spinFile != NULL) {
@@ -509,6 +526,25 @@ BOOL SpinSoundDelegate::ExecuteInstruction(Instruction* inst) {
 	case SOF:
 	{
 		fv1->sof(inst->arg0->doubleValue, inst->arg1->doubleValue);
+		return true;
+	}
+	break;
+	case MAXX:
+	{
+		fv1->maxx(inst->arg0->regAddress, inst->arg1->doubleValue);
+		return true;
+	}
+	break;
+	case LDAX:
+	{
+		fv1->ldax(inst->arg0->regAddress);
+		return true;
+	}
+	break;
+	case SKP:
+	{
+		unsigned int condition = inst->arg0->condition;
+		unsigned int skiplines = inst->arg1->skipLines;
 		return true;
 	}
 	break;
@@ -667,7 +703,7 @@ void LoadFile(HANDLE file, FV1* fv1) {
 
 					// pass two, check if all instructions can be interpreted
 					// gather all instructions
-					PassTwoResult passTwoResult = PassTwoParse(fv1, passOneResult.equatesMap, passOneResult.memoryMap, lexicalResult.secondPass);
+					PassTwoResult passTwoResult = PassTwoParse(fv1, passOneResult.equatesMap, passOneResult.memoryMap, lexicalResult.labels, lexicalResult.secondPass);
 					if (passTwoResult.success) {
 						spinResult = new SpinFile();
 						spinResult->passOne = passOneResult;
@@ -767,14 +803,14 @@ PassOneResult PassOneParse(FV1* fv1, vector<vector<Lexer::Token*>> lines) {
 }
 
 
-PassTwoResult PassTwoParse(FV1* fv1, map<string, Param> equMap, map<string, Memory*> memMap, vector<vector<Lexer::Token*>> lines) {
+PassTwoResult PassTwoParse(FV1* fv1, map<string, Param> equMap, map<string, Memory*> memMap, map<string, unsigned int> labels, vector<vector<Lexer::Token*>> lines) {
 	PassTwoResult result = PassTwoResult();
 	result.success = false;
 	unsigned int index = 0;
 	for (vector<vector<Lexer::Token*>>::iterator it = lines.begin(); it != lines.end(); it++) {
 		vector<Lexer::Token*> v = (*it);
 		Instruction* inst = new Instruction();
-		BOOL instructionLoaded = LoadInstructionWithInstructionLine(fv1, equMap, memMap, v, inst);
+		BOOL instructionLoaded = LoadInstructionWithInstructionLine(fv1, equMap, memMap, labels, v, index, inst);
 		if (instructionLoaded) {
 			result.instructions[index] = inst;
 		}
@@ -789,7 +825,7 @@ PassTwoResult PassTwoParse(FV1* fv1, map<string, Param> equMap, map<string, Memo
 	return result;
 }
 
-BOOL LoadInstructionWithInstructionLine(FV1* fv1, map<string, Param> equMap, map<string, Memory*> memMap, vector<Lexer::Token*> line, Instruction* instruction) {
+BOOL LoadInstructionWithInstructionLine(FV1* fv1, map<string, Param> equMap, map<string, Memory*> memMap, map<string, unsigned int> labels, vector<Lexer::Token*> line, unsigned int currentInstruction, Instruction* instruction) {
 	if (line.size() > 1) {
 		Lexer::TOKEN_TYPE type = line[0]->type;
 		if (type == Lexer::TOKEN_TYPE::IDENTIFIER) {
@@ -829,6 +865,10 @@ BOOL LoadInstructionWithInstructionLine(FV1* fv1, map<string, Param> equMap, map
 						if (it != memMap.end()) {
 							arg0->mem = (*it).second;
 						}
+
+						if (arg0->regAddress == NULL && arg0->mem == NULL) {
+							arg0->condition = fv1->conditionWithIdentifier(arg0->value);
+						}
 					}
 					else if (line[0]->type == Lexer::TOKEN_TYPE::NUMBER || line[0]->type == Lexer::TOKEN_TYPE::MINUS) {
 						// log and exp should have as first argument a number
@@ -851,7 +891,7 @@ BOOL LoadInstructionWithInstructionLine(FV1* fv1, map<string, Param> equMap, map
 					}
 
 
-					if (instruction->type == RDAX || instruction->type == WRAX) {
+					if (instruction->type == RDAX || instruction->type == WRAX || instruction->type == MAXX) {
 						if (arg0->regAddress == NULL) {
 							throw exception("register address is required for first argument.");
 						}
@@ -860,6 +900,12 @@ BOOL LoadInstructionWithInstructionLine(FV1* fv1, map<string, Param> equMap, map
 					if (instruction->type == RDA || instruction->type == WRA || instruction->type == WRAP) {
 						if (arg0->mem == NULL) {
 							throw exception("memory is required for first argument.");
+						}
+					}
+
+					if (instruction->type == SKP) {
+						if (arg0->condition == 0) {
+							throw exception("condition is required for first argument.");
 						}
 					}
 
@@ -892,6 +938,8 @@ BOOL LoadInstructionWithInstructionLine(FV1* fv1, map<string, Param> equMap, map
 									STR2NUMBER_ERROR err = str2dble(coefficient, line[0]->name.c_str());
 									if (err == SUCCESS) {
 										arg1->doubleValue = negative ? coefficient * -1.0 : coefficient;
+
+										arg1->skipLines = unsigned int(arg0->doubleValue);
 									}
 								}
 								else if (line[0]->type == Lexer::TOKEN_TYPE::IDENTIFIER) {
@@ -899,6 +947,12 @@ BOOL LoadInstructionWithInstructionLine(FV1* fv1, map<string, Param> equMap, map
 									if (it != equMap.end()) {
 										Param p = (*it).second;
 										arg1->doubleValue = negative ? p.doubleValue * -1.0 : p.doubleValue;
+									}
+
+									map<string, unsigned int>::iterator it2 = labels.find(line[0]->name);
+									if (it2 != labels.end()) {
+										unsigned int labelAddress = (*it2).second;
+										arg1->skipLines = labelAddress - currentInstruction;
 									}
 								}
 								arg1->type = line[0]->type;
@@ -911,7 +965,7 @@ BOOL LoadInstructionWithInstructionLine(FV1* fv1, map<string, Param> equMap, map
 					}
 				}
 				else {
-					// this instruction has one argument, like mulx
+					// this instruction has one argument, like mulx, ldax
 					if (line.size() > 0) {
 						if (line[0]->type == Lexer::TOKEN_TYPE::IDENTIFIER) {
 
@@ -928,7 +982,7 @@ BOOL LoadInstructionWithInstructionLine(FV1* fv1, map<string, Param> equMap, map
 								}
 							}
 
-							if (instruction->type == MULX) {
+							if (instruction->type == MULX || instruction->type == LDAX) {
 								if (arg0->regAddress == NULL) {
 									throw exception("register address is required for first argument.");
 								}
@@ -994,29 +1048,75 @@ InstructionType InstructionTypeWithString(string& instruction) {
 	else if (instruction.compare("sof") == 0) {
 		return SOF;
 	}
-
+	else if (instruction.compare("maxx") == 0) {
+		return MAXX;
+	}
+	else if (instruction.compare("ldax") == 0) {
+		return LDAX;
+	}
+	else if (instruction.compare("skp") == 0) {
+		return SKP;
+	}
 	else {
 		return UNKNOWN;
 	}
 }
 // separate statements that should be executed on first pass, and second
+// this handles label declarations followed by code
 ExecutionVectorResult generateExecutionVector(vector<vector<Lexer::Token*>> lines) {
 
 	ExecutionVectorResult exec = ExecutionVectorResult();
 
 	for (vector<vector<Lexer::Token*>>::iterator it = lines.begin(); it != lines.end(); it++) {
 		vector<Lexer::Token*> v = (*it);
-		if (isFirstPassStatement(v)) {
-			exec.firstPass.push_back(v);
+		SplitStatementInfo splitInfo = shouldSplitStatements(v);
+		if (splitInfo.shouldSplit) {
+			string label = splitInfo.labelDeclared;
+			unsigned int absoluteCodeLine = exec.secondPass.size() - 1; // zero based line
+			exec.labels[label] = absoluteCodeLine;
+
+			if (splitInfo.secondPassStatement.size() > 0) {
+				exec.secondPass.push_back(splitInfo.secondPassStatement);
+			}
 		}
 		else {
-			exec.secondPass.push_back(v);
+			if (isFirstPassStatement(v)) {
+				exec.firstPass.push_back(v);
+			}
+			else {
+				exec.secondPass.push_back(v);
+			}
 		}
 	}
 	exec.success = true;
 	return exec;
 }
 
+// splits instructions to be parsed in different stages
+// label declarations should be executed in first pass,
+// the same line can be followed by code.
+SplitStatementInfo shouldSplitStatements(vector<Lexer::Token*> line) {
+	SplitStatementInfo splitInfo = SplitStatementInfo();
+	splitInfo.shouldSplit = false;
+
+	if (line.size() > 1) {
+		Lexer::TOKEN_TYPE type = line[0]->type;
+		if (type == Lexer::TOKEN_TYPE::IDENTIFIER) {
+			// if followed by (:) colon, is a label, should be added to first group
+			if (line[1]->type == Lexer::TOKEN_TYPE::COLON) {
+				splitInfo.shouldSplit = true;
+				splitInfo.labelDeclared = line[0]->name;
+
+				if (line.size() > 2) {
+					for (unsigned int i = 2; i < line.size(); i++) {
+						splitInfo.secondPassStatement.push_back(line[i]);
+					}
+				}
+			}
+		}
+	}
+	return splitInfo;
+}
 BOOL isFirstPassStatement(vector<Lexer::Token*> v) {
 	if (v.size() == 3) {
 		Lexer::TOKEN_TYPE type = v[0]->type;
