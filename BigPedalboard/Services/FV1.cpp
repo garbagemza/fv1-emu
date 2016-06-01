@@ -99,6 +99,28 @@ void FV1::ldax(double* reg_addr) {
 	acc = (*reg_addr);
 }
 
+void FV1::absa() {
+	pacc = acc;
+	acc = abs(acc);
+}
+
+
+bool FV1::zrc() {
+	return signbit(pacc) != signbit(acc);
+}
+
+bool FV1::zro() {
+	return acc == 0.0;
+}
+
+bool FV1::gez() {
+	return acc >= 0.0;
+}
+
+bool FV1::neg() {
+	return signbit(acc);
+}
+
 // increments indexes by one
 // when reaching the end of the buffer, they start again in zero, making a circular buffer
 void FV1::updm(Memory* mem) {
@@ -227,22 +249,22 @@ double* FV1::getAddressOfIdentifier(string id) {
 	return 0;
 }
 
-unsigned int FV1::conditionWithIdentifier(string id) {
+FV1::SkipCondition FV1::conditionWithIdentifier(string id) {
 	if (id.compare("run") == 0) {
-		return run;
+		return FV1::RUN;
 	}
 	else if (id.compare("zrc") == 0) {
-		return zrc;
+		return FV1::ZRC;
 	}
 	else if (id.compare("zro") == 0) {
-		return zro;
+		return FV1::ZRO;
 	}
 	else if (id.compare("gez") == 0) {
-		return gez;
+		return FV1::GEZ;
 	}
 	else if (id.compare("neg") == 0) {
-		return neg;
+		return FV1::NEG;
 	}
 
-	return 0;
+	return FV1::UNKNOWN;
 }

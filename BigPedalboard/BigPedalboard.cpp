@@ -42,7 +42,7 @@ struct Param
 	Memory* mem;
 
 	// used for skp instruction
-	unsigned int condition;
+	FV1::SkipCondition condition;
 	unsigned int skipLines;
 
 	Param() {
@@ -50,7 +50,7 @@ struct Param
 		doubleValue = 0;
 		regAddress = 0;
 		mem = 0;
-		condition = 0;
+		condition = FV1::UNKNOWN;
 		skipLines = 0;
 	}
 };
@@ -70,6 +70,7 @@ enum InstructionType {
 	MAXX,
 	LDAX,
 	SKP,
+	ABSA,
 };
 
 struct Instruction
@@ -121,7 +122,7 @@ class SpinSoundDelegate : public ISoundDelegate {
 	void getAudioChunk(LPVOID, DWORD, DWORD&);
 	void didEndPlay();
 
-	BOOL ExecuteInstruction(Instruction* inst);
+	BOOL ExecuteInstruction(Instruction* inst, unsigned int index, unsigned int& skipLines);
 	void UpdateDelayMemories();
 
 	SignalGenerator* generator = 0;
@@ -384,7 +385,7 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 void SpinSoundDelegate::willBeginPlay() {
 
-	generator = SoundUtilities::createSignalGenerator(SignalType::Sinusoidal, 200.0);
+	generator = SoundUtilities::createSignalGenerator(SignalType::Triangle, 200.0);
 	timer = TimerManager::createTimer(44100);
 	
 	if (this->spinFile != NULL) {
@@ -443,8 +444,12 @@ void SpinSoundDelegate::getAudioChunk(LPVOID buffer, DWORD sampleCount, DWORD &d
 		if (spinLoaded) {
 
 			for (unsigned int i = 0; i < instructionCount; i++) {
-				Instruction* inst = instructions[i];				
-				ExecuteInstruction(inst);
+				Instruction* inst = instructions[i];
+				unsigned int skipLines = 0;
+				ExecuteInstruction(inst, i, skipLines);
+				if (skipLines != 0) {
+					i += skipLines;
+				}
 			}
 
 			UpdateDelayMemories();
@@ -465,7 +470,7 @@ void SpinSoundDelegate::getAudioChunk(LPVOID buffer, DWORD sampleCount, DWORD &d
 	dwRetSamples = sampleCount;
 }
 
-BOOL SpinSoundDelegate::ExecuteInstruction(Instruction* inst) {
+BOOL SpinSoundDelegate::ExecuteInstruction(Instruction* inst, unsigned int index, unsigned int & skipLines) {
 	
 	switch (inst->type) {
 	case RDAX:
@@ -543,8 +548,34 @@ BOOL SpinSoundDelegate::ExecuteInstruction(Instruction* inst) {
 	break;
 	case SKP:
 	{
-		unsigned int condition = inst->arg0->condition;
-		unsigned int skiplines = inst->arg1->skipLines;
+		FV1::SkipCondition condition = inst->arg0->condition;
+		bool executeSkip = false;
+		switch (condition) {
+		case FV1::RUN:
+			executeSkip = index > 0;
+			break;
+		case FV1::ZRC:
+			executeSkip = fv1->zrc();
+			break;
+		case FV1::ZRO:
+			executeSkip = fv1->zro();
+			break;
+		case FV1::GEZ:
+			executeSkip = fv1->gez();
+			break;
+		case FV1::NEG:
+			executeSkip = fv1->neg();
+			break;
+		}
+
+		skipLines = executeSkip ? inst->arg1->skipLines : 0;
+
+		return true;
+	}
+	break;
+	case ABSA:
+	{
+		fv1->absa();
 		return true;
 	}
 	break;
@@ -826,7 +857,7 @@ PassTwoResult PassTwoParse(FV1* fv1, map<string, Param> equMap, map<string, Memo
 }
 
 BOOL LoadInstructionWithInstructionLine(FV1* fv1, map<string, Param> equMap, map<string, Memory*> memMap, map<string, unsigned int> labels, vector<Lexer::Token*> line, unsigned int currentInstruction, Instruction* instruction) {
-	if (line.size() > 1) {
+	if (line.size() > 0) {
 		Lexer::TOKEN_TYPE type = line[0]->type;
 		if (type == Lexer::TOKEN_TYPE::IDENTIFIER) {
 			string inst = line[0]->name;
@@ -964,35 +995,39 @@ BOOL LoadInstructionWithInstructionLine(FV1* fv1, map<string, Param> equMap, map
 						}
 					}
 				}
-				else {
+				else if(line.size() > 0) {
 					// this instruction has one argument, like mulx, ldax
-					if (line.size() > 0) {
-						if (line[0]->type == Lexer::TOKEN_TYPE::IDENTIFIER) {
+					if (line[0]->type == Lexer::TOKEN_TYPE::IDENTIFIER) {
 
-							Param* arg0 = new Param();
-							arg0->type = line[0]->type;
-							arg0->value = line[0]->name;
-							arg0->dir = FV1::Start;
-							arg0->regAddress = fv1->getAddressOfIdentifier(arg0->value);
-							if (arg0->regAddress == NULL) {
-								map<string, Param>::iterator it = equMap.find(arg0->value);
-								if (it != equMap.end()) {
-									Param param = (*it).second;
-									arg0->regAddress = param.regAddress;
-								}
+						Param* arg0 = new Param();
+						arg0->type = line[0]->type;
+						arg0->value = line[0]->name;
+						arg0->dir = FV1::Start;
+						arg0->regAddress = fv1->getAddressOfIdentifier(arg0->value);
+						if (arg0->regAddress == NULL) {
+							map<string, Param>::iterator it = equMap.find(arg0->value);
+							if (it != equMap.end()) {
+								Param param = (*it).second;
+								arg0->regAddress = param.regAddress;
 							}
-
-							if (instruction->type == MULX || instruction->type == LDAX) {
-								if (arg0->regAddress == NULL) {
-									throw exception("register address is required for first argument.");
-								}
-							}
-
-							instruction->arg0 = arg0;
-							instruction->arg1 = NULL;
-							return true;
 						}
+
+						if (instruction->type == MULX || instruction->type == LDAX) {
+							if (arg0->regAddress == NULL) {
+								throw exception("register address is required for first argument.");
+							}
+						}
+
+						instruction->arg0 = arg0;
+						instruction->arg1 = NULL;
+						return true;
 					}
+				}
+				else {
+					// 0 arguments, it must be absa
+					instruction->arg0 = NULL;
+					instruction->arg1 = NULL;
+					return true;
 				}
 			}
 			else {
@@ -1056,6 +1091,9 @@ InstructionType InstructionTypeWithString(string& instruction) {
 	}
 	else if (instruction.compare("skp") == 0) {
 		return SKP;
+	}
+	else if (instruction.compare("absa") == 0) {
+		return ABSA;
 	}
 	else {
 		return UNKNOWN;
