@@ -31,6 +31,11 @@ struct SpinFile;
 SpinFile* spinResult = 0;
 FV1* fv1 = 0;
 
+struct MemoryAddress {
+	Memory* mem = 0;
+	signed int displacement = 0;
+};
+
 struct Param
 {
 	Lexer::TOKEN_TYPE type;
@@ -39,7 +44,7 @@ struct Param
 	double doubleValue;
 
 	double* regAddress;
-	Memory* mem;
+	MemoryAddress* memAddress;
 
 	// used for skp instruction
 	FV1::SkipCondition condition;
@@ -49,7 +54,7 @@ struct Param
 		dir = FV1::Start;
 		doubleValue = 0;
 		regAddress = 0;
-		mem = 0;
+		memAddress = 0;
 		condition = FV1::UNKNOWN;
 		skipLines = 0;
 	}
@@ -71,6 +76,8 @@ enum InstructionType {
 	LDAX,
 	SKP,
 	ABSA,
+	WRLX,
+	WRHX,
 };
 
 struct Instruction
@@ -446,9 +453,12 @@ void SpinSoundDelegate::getAudioChunk(LPVOID buffer, DWORD sampleCount, DWORD &d
 			for (unsigned int i = 0; i < instructionCount; i++) {
 				Instruction* inst = instructions[i];
 				unsigned int skipLines = 0;
-				ExecuteInstruction(inst, i, skipLines);
-				if (skipLines != 0) {
+				bool ok = ExecuteInstruction(inst, i, skipLines);
+				if (ok && skipLines != 0) {
 					i += skipLines;
+				}
+				else if (!ok) {
+					throw exception("unrecognized exception");
 				}
 			}
 
@@ -482,13 +492,13 @@ BOOL SpinSoundDelegate::ExecuteInstruction(Instruction* inst, unsigned int index
 	break;
 	case RDA:
 	{
-		fv1->rda(inst->arg0->mem, inst->arg0->dir, inst->arg1->doubleValue);
+		fv1->rda(inst->arg0->memAddress->mem, inst->arg0->dir, inst->arg1->doubleValue);
 		return true;
 	}
 	break;
 	case WRAP:
 	{
-		fv1->wrap(inst->arg0->mem, inst->arg1->doubleValue);
+		fv1->wrap(inst->arg0->memAddress->mem, inst->arg1->doubleValue);
 		return true;
 	}
 	break;
@@ -500,7 +510,7 @@ BOOL SpinSoundDelegate::ExecuteInstruction(Instruction* inst, unsigned int index
 	break;
 	case WRA:
 	{
-		fv1->wra(inst->arg0->mem, inst->arg1->doubleValue);
+		fv1->wra(inst->arg0->memAddress->mem, inst->arg1->doubleValue);
 		return true;
 	}
 	break;
@@ -867,7 +877,7 @@ BOOL LoadInstructionWithInstructionLine(FV1* fv1, map<string, Param> equMap, map
 				instruction->type = type;
 
 				if (line.size() > 2) {
-					int tokensToConsume = 1;
+
 					FV1::MemoryPosition position = FV1::Start;
 					Param* arg0 = new Param();
 
@@ -875,11 +885,13 @@ BOOL LoadInstructionWithInstructionLine(FV1* fv1, map<string, Param> equMap, map
 						arg0->type = line[0]->type;
 						arg0->value = line[0]->name;
 
+						line.erase(line.begin());
+
 						// next token is optional, it can be numeral (#) or circumflex (^)
 						// if followed by a comma, the direction specification is the default.
-						if (line[1]->type == Lexer::TOKEN_TYPE::NUMERAL || line[1]->type == Lexer::TOKEN_TYPE::CIRCUMFLEX) {
-							position = DirectionSpecificationWithType(line[1]->type);
-							tokensToConsume++;
+						if (line[0]->type == Lexer::TOKEN_TYPE::NUMERAL || line[0]->type == Lexer::TOKEN_TYPE::CIRCUMFLEX) {
+							position = DirectionSpecificationWithType(line[0]->type);
+							line.erase(line.begin());
 						}
 
 						arg0->dir = position;
@@ -894,10 +906,37 @@ BOOL LoadInstructionWithInstructionLine(FV1* fv1, map<string, Param> equMap, map
 
 						map<string, Memory*>::iterator it = memMap.find(arg0->value);
 						if (it != memMap.end()) {
-							arg0->mem = (*it).second;
+							MemoryAddress* memAddress = new MemoryAddress();
+							memAddress->mem = (*it).second;
+							// memory address found, look for any modifier to the memory address
+							if (line.size() > 3 && (line[0]->type == Lexer::TOKEN_TYPE::PLUS || line[0]->type == Lexer::TOKEN_TYPE::MINUS)) {
+								// there is a displacement here
+								bool negative = false;
+								if (line[0]->type == Lexer::TOKEN_TYPE::MINUS) {
+									// is negative
+									negative = true;
+								}
+								line.erase(line.begin()); // erase plus or minus token
+								if (line[0]->type == Lexer::TOKEN_TYPE::NUMBER) {
+									unsigned int displacement = 0;
+									STR2NUMBER_ERROR err = str2uint(displacement, line[0]->name.c_str());
+									if (err == SUCCESS) {
+										memAddress->displacement = negative ? displacement * -1 : displacement;
+									}
+
+									line.erase(line.begin()); // erase number
+								}
+								else {
+									throw exception("a number was expected to construct a displacement.");
+								}
+							}
+
+							arg0->memAddress = memAddress;
+
+
 						}
 
-						if (arg0->regAddress == NULL && arg0->mem == NULL) {
+						if (arg0->regAddress == NULL && arg0->memAddress == NULL) {
 							arg0->condition = fv1->conditionWithIdentifier(arg0->value);
 						}
 					}
@@ -917,19 +956,19 @@ BOOL LoadInstructionWithInstructionLine(FV1* fv1, map<string, Param> equMap, map
 							if (err == SUCCESS) {
 								arg0->doubleValue = negative ? coefficient * -1.0 : coefficient;
 							}
-
+							line.erase(line.begin()); // erase number
 						}
 					}
 
 
-					if (instruction->type == RDAX || instruction->type == WRAX || instruction->type == MAXX) {
+					if (instruction->type == RDAX || instruction->type == WRAX || instruction->type == MAXX || instruction->type == WRLX) {
 						if (arg0->regAddress == NULL) {
 							throw exception("register address is required for first argument.");
 						}
 					}
 
 					if (instruction->type == RDA || instruction->type == WRA || instruction->type == WRAP) {
-						if (arg0->mem == NULL) {
+						if (arg0->memAddress == NULL) {
 							throw exception("memory is required for first argument.");
 						}
 					}
@@ -941,14 +980,6 @@ BOOL LoadInstructionWithInstructionLine(FV1* fv1, map<string, Param> equMap, map
 					}
 
 					instruction->arg0 = arg0;
-
-					if (tokensToConsume > 1) {
-						line.erase(line.begin(), line.begin() + tokensToConsume); // remove consumed elements
-					}
-					else {
-						line.erase(line.begin());
-					}
-
 
 					// next token is a comma (followed by a second argument)
 					if (line.size() > 1) {
@@ -1095,6 +1126,13 @@ InstructionType InstructionTypeWithString(string& instruction) {
 	else if (instruction.compare("absa") == 0) {
 		return ABSA;
 	}
+	else if (instruction.compare("wrlx") == 0) {
+		return WRLX;
+	}
+	else if (instruction.compare("wrhx") == 0) {
+		return WRHX;
+	}
+
 	else {
 		return UNKNOWN;
 	}
