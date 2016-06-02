@@ -31,10 +31,6 @@ struct SpinFile;
 SpinFile* spinResult = 0;
 FV1* fv1 = 0;
 
-struct MemoryAddress {
-	Memory* mem = 0;
-	signed int displacement = 0;
-};
 
 struct Param
 {
@@ -78,6 +74,9 @@ enum InstructionType {
 	ABSA,
 	WRLX,
 	WRHX,
+	WLDS,
+	CHO,
+
 };
 
 struct Instruction
@@ -85,6 +84,7 @@ struct Instruction
 	InstructionType type;
 	Param* arg0;
 	Param* arg1;
+	Param* arg2;
 };
 
 struct ExecutionVectorResult
@@ -443,10 +443,10 @@ void SpinSoundDelegate::getAudioChunk(LPVOID buffer, DWORD sampleCount, DWORD &d
 		fv1->adcl = 0.5 * SoundUtilities::sampleWithTime(generator, timer);
 		fv1->adcr = fv1->adcl;
 		
-		//if (i > 9000) {
-			//fv1->adcl = 0;			// cut sound
-			//fv1->adcr = 0;
-		//}
+		if (i > 9000) {
+			fv1->adcl = 0;			// cut sound
+			fv1->adcr = 0;
+		}
 
 		if (spinLoaded) {
 
@@ -458,7 +458,7 @@ void SpinSoundDelegate::getAudioChunk(LPVOID buffer, DWORD sampleCount, DWORD &d
 					i += skipLines;
 				}
 				else if (!ok) {
-					throw exception("unrecognized exception");
+					throw exception("unrecognized instruction");
 				}
 			}
 
@@ -481,7 +481,7 @@ void SpinSoundDelegate::getAudioChunk(LPVOID buffer, DWORD sampleCount, DWORD &d
 }
 
 BOOL SpinSoundDelegate::ExecuteInstruction(Instruction* inst, unsigned int index, unsigned int & skipLines) {
-	
+
 	switch (inst->type) {
 	case RDAX:
 	{
@@ -492,7 +492,7 @@ BOOL SpinSoundDelegate::ExecuteInstruction(Instruction* inst, unsigned int index
 	break;
 	case RDA:
 	{
-		fv1->rda(inst->arg0->memAddress->mem, inst->arg0->dir, inst->arg1->doubleValue);
+		fv1->rda(inst->arg0->memAddress, inst->arg0->dir, inst->arg1->doubleValue);
 		return true;
 	}
 	break;
@@ -589,7 +589,20 @@ BOOL SpinSoundDelegate::ExecuteInstruction(Instruction* inst, unsigned int index
 		return true;
 	}
 	break;
+	case WRLX:
+	{
+		fv1->wrlx(inst->arg0->regAddress, inst->arg1->doubleValue);
+		return true;
 	}
+	break;
+	case WRHX:
+	{
+		fv1->wrhx(inst->arg0->regAddress, inst->arg1->doubleValue);
+		return true;
+	}
+	break;
+	}
+
 	return false;
 }
 
@@ -618,16 +631,16 @@ void MinReverbDelegate::getAudioChunk(LPVOID buffer, DWORD sampleCount, DWORD &d
 		fv1->rdax(adcl, 0.25);					//rdax adcl, 0.25 ; read inputs,
 		fv1->rdax(adcr, 0.25);					//attenuate, sum and
 
-		fv1->rda(api1, FV1::End, kap);			//rda api1#, kap; do 4 APs
-		fv1->wrap(api1, -kap);					//wrap api1, -kap
+		//fv1->rda(api1, FV1::End, kap);			//rda api1#, kap; do 4 APs
+		//fv1->wrap(api1, -kap);					//wrap api1, -kap
 
-		fv1->rda(api2, FV1::End, kap);			//rda api2#, kap
-		fv1->wrap(api2, -kap);					//wrap api2, -kap
+		//fv1->rda(api2, FV1::End, kap);			//rda api2#, kap
+		//fv1->wrap(api2, -kap);					//wrap api2, -kap
 
-		fv1->rda(api3, FV1::End, kap);			//rda api3#, kap
-		fv1->wrap(api3, -kap);					//wrap api3, -kap
+		//fv1->rda(api3, FV1::End, kap);			//rda api3#, kap
+		//fv1->wrap(api3, -kap);					//wrap api3, -kap
 
-		fv1->rda(api4, FV1::End, kap);			//rda api4#, kap
+		//fv1->rda(api4, FV1::End, kap);			//rda api4#, kap
 		fv1->wrap(api4, -kap);					//wrap api4, -kap
 
 		fv1->wrax(&apout, 1.0);					//wrax	apout, 1; write to min, keep in ACC
@@ -635,8 +648,8 @@ void MinReverbDelegate::getAudioChunk(LPVOID buffer, DWORD sampleCount, DWORD &d
 												//; first loop apd :
 												//; AP'd input in ACC
 		
-		fv1->rda(del2, FV1::End, krt);			//rda del2#, krt; read del2, scale by Krt
-		fv1->rda(ap1, FV1::End, -kap);			//rda ap1#, -kap; do loop ap
+		//fv1->rda(del2, FV1::End, krt);			//rda del2#, krt; read del2, scale by Krt
+		//fv1->rda(ap1, FV1::End, -kap);			//rda ap1#, -kap; do loop ap
 
 		fv1->wrap(ap1, kap);					//wrap	ap1, kap
 		fv1->wra(del1, 1.99);					//wra	del1, 1.99; write delay, x2 for dac out
@@ -645,8 +658,8 @@ void MinReverbDelegate::getAudioChunk(LPVOID buffer, DWORD sampleCount, DWORD &d
 												//; second loop apd :
 
 		fv1->rdax(apout, 1.0);					//; get input signal again
-		fv1->rda(del1, FV1::End, krt);			// as above, to other side of loop
-		fv1->rda(ap2, FV1::End, kap);
+		//fv1->rda(del1, FV1::End, krt);			// as above, to other side of loop
+		//fv1->rda(ap2, FV1::End, kap);
 		fv1->wrap(ap2, -kap);
 		fv1->wra(del2, 1.99);
 		fv1->wrax(&dacr, 0);
@@ -1021,6 +1034,35 @@ BOOL LoadInstructionWithInstructionLine(FV1* fv1, map<string, Param> equMap, map
 								arg1->value = line[0]->name;
 
 								instruction->arg1 = arg1;
+
+								line.erase(line.begin());
+								// next is optional, is a comma, followed by a third argument
+								if (line.size() > 1) {
+									if (line[0]->type == Lexer::TOKEN_TYPE::COMMA) {
+										Param* arg2 = new Param();
+
+										line.erase(line.begin());
+										bool negative = false;
+										if (line[0]->type == Lexer::TOKEN_TYPE::MINUS) {
+											line.erase(line.begin());
+											negative = true;
+										}
+
+										if (line[0]->type == Lexer::TOKEN_TYPE::NUMBER) {
+											arg2->type = line[0]->type;
+											arg2->value = line[0]->name;
+
+											double coefficient = 0;
+											STR2NUMBER_ERROR err = str2dble(coefficient, line[0]->name.c_str());
+											if (err == SUCCESS) {
+												arg2->doubleValue = negative ? coefficient * -1.0 : coefficient;
+											}
+											line.erase(line.begin());
+										}
+										instruction->arg2 = arg2;
+									}
+								}
+
 								return true;
 							}
 						}
@@ -1132,7 +1174,12 @@ InstructionType InstructionTypeWithString(string& instruction) {
 	else if (instruction.compare("wrhx") == 0) {
 		return WRHX;
 	}
-
+	else if (instruction.compare("wlds") == 0) {
+		return WLDS;
+	}
+	else if (instruction.compare("cho") == 0) {
+		return CHO;
+	}
 	else {
 		return UNKNOWN;
 	}

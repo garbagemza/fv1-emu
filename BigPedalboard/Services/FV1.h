@@ -3,6 +3,7 @@
 using namespace std;
 
 struct Memory;
+struct MemoryAddress;
 
 class FV1 {
 public:
@@ -119,7 +120,7 @@ public:
 
 	void mem(Memory** addr, unsigned int size);
 	void rdax(double regValue, double coefficient);
-	void rda(Memory* mem, MemoryPosition pos, double coefficient);
+	void rda(MemoryAddress* mem, MemoryPosition pos, double coefficient);
 
 	void wrap(Memory* mem, double coefficient);
 	void wrax(double* value_addr, double coefficient);
@@ -132,6 +133,8 @@ public:
 	void maxx(double* reg_addr, double coefficient);
 	void ldax(double* reg_addr);
 	void absa();
+	void wrlx(double* reg_addr, double coefficient);
+	void wrhx(double* reg_addr, double coefficient);
 
 	// used for conditions
 	bool zrc();

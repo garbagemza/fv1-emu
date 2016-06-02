@@ -18,12 +18,16 @@ Memory* MemoryManager::createMemory(unsigned int size) {
 	return NULL;
 }
 
-double MemoryManager::getValueAtEnd(Memory* mem) {
-	return mem->start_ptr[mem->tail_index];
+double MemoryManager::getValueAtEnd(MemoryAddress* mem) {
+	unsigned int index = mem->mem->tail_index + mem->displacement;
+	index = index % mem->mem->size;
+	return mem->mem->start_ptr[index];
 }
 
-double MemoryManager::getValueAtStart(Memory* mem) {
-	return mem->start_ptr[mem->head_index];
+double MemoryManager::getValueAtStart(MemoryAddress* mem) {
+	unsigned int index = mem->mem->head_index + mem->displacement;
+	index = index % mem->mem->size;
+	return mem->mem->start_ptr[index];
 }
 
 // if the size is odd, returns the middle point of the buffer

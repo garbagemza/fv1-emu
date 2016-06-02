@@ -15,7 +15,7 @@ void FV1::rdax(double regValue, double coefficient) {
 }
 
 // since the memory is read from the end, we switch read algorithm
-void FV1::rda(Memory* mem, MemoryPosition pos, double coefficient) {
+void FV1::rda(MemoryAddress* mem, MemoryPosition pos, double coefficient) {
 	double tmp = 0;
 	switch (pos) {
 	case Start:
@@ -104,6 +104,19 @@ void FV1::absa() {
 	acc = abs(acc);
 }
 
+void FV1::wrlx(double* reg_addr, double coefficient) {
+	(*reg_addr) = acc;
+	double tmpAcc = (pacc - acc) * coefficient + pacc;
+	pacc = acc;
+	acc = tmpAcc;
+}
+
+void FV1::wrhx(double* reg_addr, double coefficient) {
+	(*reg_addr) = acc;
+	double tmpAcc = (acc * coefficient) + pacc;
+	pacc = acc;
+	acc = tmpAcc;
+}
 
 bool FV1::zrc() {
 	return signbit(pacc) != signbit(acc);
