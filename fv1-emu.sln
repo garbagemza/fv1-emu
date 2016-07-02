@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
 VisualStudioVersion = 12.0.40629.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BigPedalboard", "BigPedalboard\BigPedalboard.vcxproj", "{AF4524C7-324A-4866-A193-5359660FAEF0}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fv1-emu", "fv1-emu\fv1-emu.vcxproj", "{AF4524C7-324A-4866-A193-5359660FAEF0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
