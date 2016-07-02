@@ -70,9 +70,24 @@ void SCLog::log(int severity, const wchar_t* fmt, ... )
 					stream << d;
 					++fmt;
 				}
-				else if (*(fmt+1) == 's') 
+				else if (*(fmt + 1) == 'w')
 				{
 					wchar_t * s = va_arg(args, wchar_t*);
+					if (s != 0)
+					{
+						stream << s;
+					}
+					else
+					{
+						stream << "null";
+					}
+
+					++fmt;
+				}
+
+				else if (*(fmt+1) == 's') 
+				{
+					char * s = va_arg(args, char*);
 					if(s != 0)
 					{
 						stream << s;

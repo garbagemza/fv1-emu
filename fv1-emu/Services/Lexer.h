@@ -35,7 +35,9 @@ public:
 	Lexer(void* lpBuffer, unsigned int size);
 
 	bool hasNextLine();
-	vector<Token*> getNextLine();
+	string getNextLine();
+	vector<Token*> getTokenizedNextLine();
+	
 
 private:
 	bool hasNextToken();

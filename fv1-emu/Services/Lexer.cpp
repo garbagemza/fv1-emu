@@ -31,8 +31,21 @@ bool Lexer::hasNextToken() {
 	return false;
 }
 
-// it does not add newline token but is useful to identify the break of the line
-vector<Lexer::Token*> Lexer::getNextLine() {
+string Lexer::getNextLine() {
+	string line;
+	int tempPos = pos;
+	while (tempPos < buflen) {
+		char c = ((char*)lpBuffer)[tempPos];
+		if (isNewLine(c)) {
+			break;
+		}
+		line.push_back(c);
+		tempPos++;
+	}
+	return line;
+}
+
+vector<Lexer::Token*> Lexer::getTokenizedNextLine() {
 	vector<Token*> v;
 	while (hasNextToken()) {
 		Token* token = getNextToken();

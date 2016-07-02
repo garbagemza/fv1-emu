@@ -726,7 +726,7 @@ void PromptOpenFile() {
 }
 
 void OpenFileForReadAndLoad(LPWSTR filename) {
-	SCLogInfo(L"Prepare to open file %s", filename);
+	SCLogInfo(L"Prepare to open file %w", filename);
 
 	HANDLE file = CreateFile(filename,
 		GENERIC_READ,
@@ -787,14 +787,19 @@ ExecutionVectorResult beginLexicalAnalysis(LPVOID lpBuffer, DWORD size) {
 	Lexer lex = Lexer(lpBuffer, size);
 	vector<vector<Lexer::Token*>> lines;
 	while (lex.hasNextLine()) {
+		string lineStr;
 		try {
-			vector<Lexer::Token*> line = lex.getNextLine();
+			lineStr = lex.getNextLine();
+			if (lineStr.size() > 0) {
+				SCLogInfo(L"Parsing line: %s", lineStr.c_str())
+			}
+			vector<Lexer::Token*> line = lex.getTokenizedNextLine();
 			if (line.size() > 0) {
 				lines.push_back(line);
 			}
-
 		}
 		catch (std::exception& e) {
+			SCLogError(L"Unable to parse: %s, exception: %s", lineStr.c_str(), e.what());
 			ExecutionVectorResult err = ExecutionVectorResult();
 			err.success = false;
 			return err;
