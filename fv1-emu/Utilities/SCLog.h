@@ -11,6 +11,7 @@
 
 #define SCLogInfo(...) SCLog::mainInstance()->log(SCLogLevelInfo, __VA_ARGS__);
 #define SCLogError(...) SCLog::mainInstance()->log(SCLogLevelError, __VA_ARGS__);
+#define SCLogFunction() SCLogInfo(__FUNCTIONW__);
 
 
 class SCLog
@@ -23,7 +24,7 @@ public:
 	const char* rollingLogFile();
 
 	
-	void log(int severity, const char* format, ...);
+	void log(int severity, const wchar_t* format, ...);
 	
 private:
 	// move to private eventually

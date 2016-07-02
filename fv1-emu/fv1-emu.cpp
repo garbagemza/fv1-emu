@@ -218,7 +218,7 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 	{
 		return FALSE;
 	}
-	SCLogInfo("App initialized.");
+	SCLogInfo(L"App initialized.");
 
 	hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_FV1_EMU));
 
@@ -335,6 +335,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		wmId    = LOWORD(wParam);
 		wmEvent = HIWORD(wParam);
 		// Parse the menu selections:
+		SCLogInfo(L"MENU: chosen ID: %d", wmId);
 		switch (wmId)
 		{
 		case IDM_ABOUT:
@@ -698,6 +699,8 @@ void MinReverbDelegate::didEndPlay()
 }
 
 void PromptOpenFile() {
+	SCLogFunction();
+
 	OPENFILENAME ofn;
 	LPWSTR filename = new TCHAR[MAX_PATH];
 	ZeroMemory(&ofn, sizeof(ofn));
@@ -723,6 +726,8 @@ void PromptOpenFile() {
 }
 
 void OpenFileForReadAndLoad(LPWSTR filename) {
+	SCLogInfo(L"Prepare to open file %s", filename);
+
 	HANDLE file = CreateFile(filename,
 		GENERIC_READ,
 		FILE_SHARE_READ,
