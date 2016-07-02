@@ -94,6 +94,7 @@
     <ClInclude Include="targetver.h" />
     <ClInclude Include="Utilities\MathUtils.h" />
     <ClInclude Include="Utilities\ParseUtil.h" />
+    <ClInclude Include="Utilities\SCLog.h" />
     <ClInclude Include="Utilities\SoundClass.h" />
     <ClInclude Include="Utilities\SoundUtilities.h" />
   </ItemGroup>
@@ -109,6 +110,7 @@
     </ClCompile>
     <ClCompile Include="Utilities\MathUtils.cpp" />
     <ClCompile Include="Utilities\ParseUtil.cpp" />
+    <ClCompile Include="Utilities\SCLog.cpp" />
     <ClCompile Include="Utilities\SoundClass.cpp" />
     <ClCompile Include="Utilities\SoundUtilities.cpp" />
   </ItemGroup>

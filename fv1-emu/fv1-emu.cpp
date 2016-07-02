@@ -6,6 +6,7 @@
 #include "Utilities\SoundClass.h"
 #include "Utilities\SoundUtilities.h"
 #include "Utilities\ParseUtil.h"
+#include "Utilities\SCLog.h"
 #include "Manager\TimerManager.h"
 #include "Manager\MemoryManager.h"
 
@@ -16,7 +17,6 @@
 #include <vector>
 #include <map>
 #include <ctime>
-
 using namespace std;
 
 #define MAX_LOADSTRING 100
@@ -218,6 +218,7 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 	{
 		return FALSE;
 	}
+	SCLogInfo("App initialized.");
 
 	hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_FV1_EMU));
 
@@ -300,6 +301,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	   MessageBox(hWnd, L"Could not initialize Direct Sound.", L"Error", MB_OK);
 	   return false;
    }
+
+   SCLog::mainInstance()->setupLogging();
 
    // initialize fv1
    fv1 = new FV1();
