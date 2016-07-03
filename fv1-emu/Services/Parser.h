@@ -94,17 +94,18 @@ struct SplitStatementInfo
 	vector<Lexer::Token*> secondPassStatement;
 };
 
+class Parser {
 
-PassOneResult			PassOneParse(FV1*, vector<vector<Lexer::Token*>>);
-PassTwoResult			PassTwoParse(FV1*, map<string, Param>, map<string, Memory*>, map<string, unsigned int>, vector<vector<Lexer::Token*>>);
-ExecutionVectorResult	beginLexicalAnalysis(LPVOID lpBuffer, DWORD size);
-ExecutionVectorResult	generateExecutionVector(vector<vector<Lexer::Token*>>);
-BOOL					isFirstPassStatement(vector<Lexer::Token*>);
-SplitStatementInfo		shouldSplitStatements(vector<Lexer::Token*>);
-BOOL					LoadInstructionWithInstructionLine(FV1*, map<string, Param>, map<string, Memory*>, map<string, unsigned int>, vector<Lexer::Token*>, unsigned int, Instruction*);
+	ExecutionVectorResult	generateExecutionVector(vector<vector<Lexer::Token*>>);
+	BOOL					isFirstPassStatement(vector<Lexer::Token*>);
+	SplitStatementInfo		shouldSplitStatements(vector<Lexer::Token*>);
+	BOOL					LoadInstructionWithInstructionLine(FV1*, map<string, Param>, map<string, Memory*>, map<string, unsigned int>, vector<Lexer::Token*>, unsigned int, Instruction*);
 
-BOOL					ParseParameters();
-BOOL					ParseParameter();
+	InstructionType			InstructionTypeWithString(string&);
+	FV1::MemoryPosition		DirectionSpecificationWithType(Lexer::TOKEN_TYPE&);
 
-InstructionType			InstructionTypeWithString(string&);
-FV1::MemoryPosition		DirectionSpecificationWithType(Lexer::TOKEN_TYPE&);
+public:
+	ExecutionVectorResult	beginLexicalAnalysis(LPVOID lpBuffer, DWORD size);
+	PassOneResult			PassOneParse(FV1*, vector<vector<Lexer::Token*>>);
+	PassTwoResult			PassTwoParse(FV1*, map<string, Param>, map<string, Memory*>, map<string, unsigned int>, vector<vector<Lexer::Token*>>);
+};
