@@ -4,7 +4,7 @@
 #include "..\Manager\MemoryManager.h"
 #include "..\Utilities\SCLog.h"
 
-ExecutionVectorResult beginLexicalAnalysis(LPVOID lpBuffer, DWORD size) {
+ExecutionVectorResult Parser::beginLexicalAnalysis(LPVOID lpBuffer, DWORD size) {
 	Lexer lex = Lexer(lpBuffer, size);
 	vector<vector<Lexer::Token*>> lines;
 	while (lex.hasNextLine()) {
@@ -39,7 +39,7 @@ ExecutionVectorResult beginLexicalAnalysis(LPVOID lpBuffer, DWORD size) {
 
 // first pass is to identify memory declarations and equates
 // initializes memory and equates dictionaries
-PassOneResult PassOneParse(FV1* fv1, vector<vector<Lexer::Token*>> lines) {
+PassOneResult Parser::PassOneParse(FV1* fv1, vector<vector<Lexer::Token*>> lines) {
 	PassOneResult result = PassOneResult();
 	result.success = false;
 
@@ -91,7 +91,7 @@ PassOneResult PassOneParse(FV1* fv1, vector<vector<Lexer::Token*>> lines) {
 }
 
 
-PassTwoResult PassTwoParse(FV1* fv1, map<string, Param> equMap, map<string, Memory*> memMap, map<string, unsigned int> labels, vector<vector<Lexer::Token*>> lines) {
+PassTwoResult Parser::PassTwoParse(FV1* fv1, map<string, Param> equMap, map<string, Memory*> memMap, map<string, unsigned int> labels, vector<vector<Lexer::Token*>> lines) {
 	PassTwoResult result = PassTwoResult();
 	result.success = false;
 	unsigned int index = 0;
@@ -113,7 +113,7 @@ PassTwoResult PassTwoParse(FV1* fv1, map<string, Param> equMap, map<string, Memo
 	return result;
 }
 
-BOOL LoadInstructionWithInstructionLine(FV1* fv1, map<string, Param> equMap, map<string, Memory*> memMap, map<string, unsigned int> labels, vector<Lexer::Token*> line, unsigned int currentInstruction, Instruction* instruction) {
+BOOL Parser::LoadInstructionWithInstructionLine(FV1* fv1, map<string, Param> equMap, map<string, Memory*> memMap, map<string, unsigned int> labels, vector<Lexer::Token*> line, unsigned int currentInstruction, Instruction* instruction) {
 	if (line.size() > 0) {
 		Lexer::TOKEN_TYPE type = line[0]->type;
 		if (type == Lexer::TOKEN_TYPE::IDENTIFIER) {
@@ -348,7 +348,7 @@ BOOL LoadInstructionWithInstructionLine(FV1* fv1, map<string, Param> equMap, map
 	return false;
 }
 
-FV1::MemoryPosition DirectionSpecificationWithType(Lexer::TOKEN_TYPE& type) {
+FV1::MemoryPosition Parser::DirectionSpecificationWithType(Lexer::TOKEN_TYPE& type) {
 	switch (type) {
 	case Lexer::TOKEN_TYPE::CIRCUMFLEX:
 		return FV1::Middle;
@@ -359,7 +359,7 @@ FV1::MemoryPosition DirectionSpecificationWithType(Lexer::TOKEN_TYPE& type) {
 	}
 }
 
-InstructionType InstructionTypeWithString(string& instruction) {
+InstructionType Parser::InstructionTypeWithString(string& instruction) {
 	if (instruction.compare("rdax") == 0) {
 		return RDAX;
 	}
@@ -420,7 +420,7 @@ InstructionType InstructionTypeWithString(string& instruction) {
 }
 // separate statements that should be executed on first pass, and second
 // this handles label declarations followed by code
-ExecutionVectorResult generateExecutionVector(vector<vector<Lexer::Token*>> lines) {
+ExecutionVectorResult Parser::generateExecutionVector(vector<vector<Lexer::Token*>> lines) {
 
 	ExecutionVectorResult exec = ExecutionVectorResult();
 
@@ -452,7 +452,7 @@ ExecutionVectorResult generateExecutionVector(vector<vector<Lexer::Token*>> line
 // splits instructions to be parsed in different stages
 // label declarations should be executed in first pass,
 // the same line can be followed by code.
-SplitStatementInfo shouldSplitStatements(vector<Lexer::Token*> line) {
+SplitStatementInfo Parser::shouldSplitStatements(vector<Lexer::Token*> line) {
 	SplitStatementInfo splitInfo = SplitStatementInfo();
 	splitInfo.shouldSplit = false;
 
@@ -474,7 +474,7 @@ SplitStatementInfo shouldSplitStatements(vector<Lexer::Token*> line) {
 	}
 	return splitInfo;
 }
-BOOL isFirstPassStatement(vector<Lexer::Token*> v) {
+BOOL Parser::isFirstPassStatement(vector<Lexer::Token*> v) {
 	if (v.size() == 3) {
 		Lexer::TOKEN_TYPE type = v[0]->type;
 		if (type == Lexer::TOKEN_TYPE::IDENTIFIER) {
