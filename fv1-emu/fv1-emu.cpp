@@ -270,7 +270,7 @@ void SpinSoundDelegate::willBeginPlay() {
 	
 	if (this->spinFile != NULL) {
 		// load first pass
-		map<string, Memory*> memories = spinFile->passOne.memoryMap;
+		map<string, Memory*> memories = spinFile->memMap;
 		unsigned int index = 0;
 		for (map<string, Memory*>::iterator it = memories.begin(); it != memories.end(); it++) {
 			Memory* mem = (*it).second;
@@ -279,7 +279,7 @@ void SpinSoundDelegate::willBeginPlay() {
 		}
 		memCount = index;
 
-		map<string, Param> equates = spinFile->passOne.equatesMap;
+		map<string, Param> equates = spinFile->equMap;
 		if (memories.size() == memCount) {
 			spinFile->passOneSemanticSucceeded = true;
 		}
@@ -532,20 +532,22 @@ void LoadFile(HANDLE file, FV1* fv1) {
 	
 		BOOL read = ReadFile(file, lpBuffer, size, &numberOfBytesRead, NULL);
 		if (read && numberOfBytesRead == size) {
-			Parser parser = Parser();
+			Parser parser = Parser(fv1);
 			// gather all code lines for execution
 			ExecutionVectorResult lexicalResult = parser.beginLexicalAnalysis(lpBuffer, size);
 			if (lexicalResult.success) {
 				// do pass one; gather all delay memory and equates
-				PassOneResult passOneResult = parser.PassOneParse(fv1, lexicalResult.firstPass);
-				if (passOneResult.success) {
+				BOOL success = parser.PassOneParse(lexicalResult.firstPass);
+				if (success) {
 
 					// pass two, check if all instructions can be interpreted
 					// gather all instructions
-					PassTwoResult passTwoResult = parser.PassTwoParse(fv1, passOneResult.equatesMap, passOneResult.memoryMap, lexicalResult.labels, lexicalResult.secondPass);
+					PassTwoResult passTwoResult = parser.PassTwoParse(lexicalResult.secondPass);
 					if (passTwoResult.success) {
+
 						spinResult = new SpinFile();
-						spinResult->passOne = passOneResult;
+						spinResult->memMap = parser.memMap;
+						spinResult->equMap = parser.equMap;
 						spinResult->passTwo = passTwoResult;
 						MessageBeep(0);
 					}

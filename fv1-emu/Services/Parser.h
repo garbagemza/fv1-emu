@@ -60,7 +60,6 @@ struct Instruction
 struct ExecutionVectorResult
 {
 	bool success;
-	map<string, unsigned int> labels;
 	vector<vector<Lexer::Token*>> firstPass;
 	vector<vector<Lexer::Token*>> secondPass;
 };
@@ -78,7 +77,10 @@ struct PassTwoResult {
 };
 
 struct SpinFile {
-	PassOneResult passOne;
+
+	map<string, Param> equMap;
+	map<string, Memory*> memMap;
+
 	PassTwoResult passTwo;
 	bool passOneSemanticSucceeded;
 
@@ -99,13 +101,23 @@ class Parser {
 	ExecutionVectorResult	generateExecutionVector(vector<vector<Lexer::Token*>>);
 	BOOL					isFirstPassStatement(vector<Lexer::Token*>);
 	SplitStatementInfo		shouldSplitStatements(vector<Lexer::Token*>);
-	BOOL					LoadInstructionWithInstructionLine(FV1*, map<string, Param>, map<string, Memory*>, map<string, unsigned int>, vector<Lexer::Token*>, unsigned int, Instruction*);
+	BOOL					LoadInstructionWithInstructionLine(vector<Lexer::Token*>, unsigned int, Instruction*);
 
 	InstructionType			InstructionTypeWithString(string&);
 	FV1::MemoryPosition		DirectionSpecificationWithType(Lexer::TOKEN_TYPE&);
 
+
+	FV1* fv1;
+	unsigned int currentInstruction;
+
 public:
+	Parser(FV1* fv1);
 	ExecutionVectorResult	beginLexicalAnalysis(LPVOID lpBuffer, DWORD size);
-	PassOneResult			PassOneParse(FV1*, vector<vector<Lexer::Token*>>);
-	PassTwoResult			PassTwoParse(FV1*, map<string, Param>, map<string, Memory*>, map<string, unsigned int>, vector<vector<Lexer::Token*>>);
+	BOOL					PassOneParse(vector<vector<Lexer::Token*>>);
+	PassTwoResult			PassTwoParse(vector<vector<Lexer::Token*>>);
+
+	map<string, Param> equMap;
+	map<string, Memory*> memMap;
+	map<string, unsigned int> labels;
+
 };

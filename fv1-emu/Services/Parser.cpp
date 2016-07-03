@@ -4,6 +4,10 @@
 #include "..\Manager\MemoryManager.h"
 #include "..\Utilities\SCLog.h"
 
+Parser::Parser(FV1* fv1) {
+	this->fv1 = fv1;
+}
+
 ExecutionVectorResult Parser::beginLexicalAnalysis(LPVOID lpBuffer, DWORD size) {
 	Lexer lex = Lexer(lpBuffer, size);
 	vector<vector<Lexer::Token*>> lines;
@@ -39,9 +43,8 @@ ExecutionVectorResult Parser::beginLexicalAnalysis(LPVOID lpBuffer, DWORD size) 
 
 // first pass is to identify memory declarations and equates
 // initializes memory and equates dictionaries
-PassOneResult Parser::PassOneParse(FV1* fv1, vector<vector<Lexer::Token*>> lines) {
-	PassOneResult result = PassOneResult();
-	result.success = false;
+BOOL Parser::PassOneParse(vector<vector<Lexer::Token*>> lines) {
+	BOOL success = false;
 
 
 	for (vector<vector<Lexer::Token*>>::iterator it = lines.begin(); it != lines.end(); it++) {
@@ -58,7 +61,7 @@ PassOneResult Parser::PassOneParse(FV1* fv1, vector<vector<Lexer::Token*>> lines
 						if (err == SUCCESS) {
 							Memory* memory = MemoryManager::createMemory(sizeUInt);
 							if (memory != NULL) {
-								result.memoryMap[v[1]->name] = memory;
+								memMap[v[1]->name] = memory;
 
 							}
 						}
@@ -79,26 +82,26 @@ PassOneResult Parser::PassOneParse(FV1* fv1, vector<vector<Lexer::Token*>> lines
 								equ.doubleValue = coeff;
 							}
 						}
-						result.equatesMap[v[1]->name] = equ;
+						equMap[v[1]->name] = equ;
 					}
 				}
 			}
 		}
 
 	}
-	result.success = true;
-	return result;
+	success = true;
+	return success;
 }
 
 
-PassTwoResult Parser::PassTwoParse(FV1* fv1, map<string, Param> equMap, map<string, Memory*> memMap, map<string, unsigned int> labels, vector<vector<Lexer::Token*>> lines) {
+PassTwoResult Parser::PassTwoParse(vector<vector<Lexer::Token*>> lines) {
 	PassTwoResult result = PassTwoResult();
 	result.success = false;
 	unsigned int index = 0;
 	for (vector<vector<Lexer::Token*>>::iterator it = lines.begin(); it != lines.end(); it++) {
 		vector<Lexer::Token*> v = (*it);
 		Instruction* inst = new Instruction();
-		BOOL instructionLoaded = LoadInstructionWithInstructionLine(fv1, equMap, memMap, labels, v, index, inst);
+		BOOL instructionLoaded = LoadInstructionWithInstructionLine(v, index, inst);
 		if (instructionLoaded) {
 			result.instructions[index] = inst;
 		}
@@ -113,7 +116,7 @@ PassTwoResult Parser::PassTwoParse(FV1* fv1, map<string, Param> equMap, map<stri
 	return result;
 }
 
-BOOL Parser::LoadInstructionWithInstructionLine(FV1* fv1, map<string, Param> equMap, map<string, Memory*> memMap, map<string, unsigned int> labels, vector<Lexer::Token*> line, unsigned int currentInstruction, Instruction* instruction) {
+BOOL Parser::LoadInstructionWithInstructionLine(vector<Lexer::Token*> line, unsigned int currentInstruction, Instruction* instruction) {
 	if (line.size() > 0) {
 		Lexer::TOKEN_TYPE type = line[0]->type;
 		if (type == Lexer::TOKEN_TYPE::IDENTIFIER) {
@@ -430,7 +433,7 @@ ExecutionVectorResult Parser::generateExecutionVector(vector<vector<Lexer::Token
 		if (splitInfo.shouldSplit) {
 			string label = splitInfo.labelDeclared;
 			unsigned int absoluteCodeLine = exec.secondPass.size() - 1; // zero based line
-			exec.labels[label] = absoluteCodeLine;
+			labels[label] = absoluteCodeLine;
 
 			if (splitInfo.secondPassStatement.size() > 0) {
 				exec.secondPass.push_back(splitInfo.secondPassStatement);
