@@ -11,20 +11,24 @@ Parser::Parser(FV1* fv1) {
 ExecutionVectorResult Parser::beginLexicalAnalysis(LPVOID lpBuffer, DWORD size) {
 	Lexer lex = Lexer(lpBuffer, size);
 	vector<vector<Lexer::Token*>> lines;
+	vector<string> linesStr;
+
 	while (lex.hasNextLine()) {
 		string lineStr;
 		try {
 			lineStr = lex.getNextLine();
 			if (lineStr.size() > 0) {
-				SCLogInfo(L"Parsing line: %s", lineStr.c_str())
+				SCLogInfo(L"Tokenizing line: %s", lineStr.c_str());
 			}
+
 			vector<Lexer::Token*> line = lex.getTokenizedNextLine();
 			if (line.size() > 0) {
 				lines.push_back(line);
+				linesStr.push_back(lineStr);
 			}
 		}
 		catch (std::exception& e) {
-			SCLogError(L"Unable to parse: %s, exception: %s", lineStr.c_str(), e.what());
+			SCLogError(L"Unable to tokenize: %s, exception: %s", lineStr.c_str(), e.what());
 			ExecutionVectorResult err = ExecutionVectorResult();
 			err.success = false;
 			return err;
@@ -33,7 +37,7 @@ ExecutionVectorResult Parser::beginLexicalAnalysis(LPVOID lpBuffer, DWORD size) 
 
 	if (lines.size() > 0) {
 		// ok, the lexical analysis has been successful
-		return generateExecutionVector(lines);
+		return generateExecutionVector(lines, linesStr);
 	}
 
 	ExecutionVectorResult err = ExecutionVectorResult();
@@ -94,13 +98,15 @@ BOOL Parser::PassOneParse(vector<vector<Lexer::Token*>> lines) {
 }
 
 
-PassTwoResult Parser::PassTwoParse(vector<vector<Lexer::Token*>> lines) {
+PassTwoResult Parser::PassTwoParse(vector<vector<Lexer::Token*>> lines, vector<string> linesStr) {
 	PassTwoResult result = PassTwoResult();
 	result.success = false;
 	unsigned int index = 0;
 	for (vector<vector<Lexer::Token*>>::iterator it = lines.begin(); it != lines.end(); it++) {
 		vector<Lexer::Token*> v = (*it);
 		Instruction* inst = new Instruction();
+		string lineStr = linesStr[index];
+		SCLogInfo(L"Parsing line: %s", lineStr.c_str());
 		BOOL instructionLoaded = LoadInstructionWithInstructionLine(v, index, inst);
 		if (instructionLoaded) {
 			result.instructions[index] = inst;
@@ -125,230 +131,143 @@ BOOL Parser::LoadInstructionWithInstructionLine(vector<Lexer::Token*> line, unsi
 			if (type != UNKNOWN) {
 				line.erase(line.begin() + 0); // remove first element
 				instruction->type = type;
+				vector<Param*> params = GetParameters(line, currentInstruction);
 
-				if (line.size() > 2) {
-
-					FV1::MemoryPosition position = FV1::Start;
-					Param* arg0 = new Param();
-
-					if (line[0]->type == Lexer::TOKEN_TYPE::IDENTIFIER) {
-						arg0->type = line[0]->type;
-						arg0->value = line[0]->name;
-
-						line.erase(line.begin());
-
-						// next token is optional, it can be numeral (#) or circumflex (^)
-						// if followed by a comma, the direction specification is the default.
-						if (line[0]->type == Lexer::TOKEN_TYPE::NUMERAL || line[0]->type == Lexer::TOKEN_TYPE::CIRCUMFLEX) {
-							position = DirectionSpecificationWithType(line[0]->type);
-							line.erase(line.begin());
-						}
-
-						arg0->dir = position;
-						arg0->regAddress = fv1->getAddressOfIdentifier(arg0->value);
-						if (arg0->regAddress == NULL) {
-							map<string, Param>::iterator it = equMap.find(arg0->value);
-							if (it != equMap.end()) {
-								Param param = (*it).second;
-								arg0->regAddress = param.regAddress;
-							}
-						}
-
-						map<string, Memory*>::iterator it = memMap.find(arg0->value);
-						if (it != memMap.end()) {
-							MemoryAddress* memAddress = new MemoryAddress();
-							memAddress->mem = (*it).second;
-							// memory address found, look for any modifier to the memory address
-							if (line.size() > 3 && (line[0]->type == Lexer::TOKEN_TYPE::PLUS || line[0]->type == Lexer::TOKEN_TYPE::MINUS)) {
-								// there is a displacement here
-								bool negative = false;
-								if (line[0]->type == Lexer::TOKEN_TYPE::MINUS) {
-									// is negative
-									negative = true;
-								}
-								line.erase(line.begin()); // erase plus or minus token
-								if (line[0]->type == Lexer::TOKEN_TYPE::NUMBER) {
-									unsigned int displacement = 0;
-									STR2NUMBER_ERROR err = str2uint(displacement, line[0]->name.c_str());
-									if (err == SUCCESS) {
-										memAddress->displacement = negative ? displacement * -1 : displacement;
-									}
-
-									line.erase(line.begin()); // erase number
-								}
-								else {
-									throw exception("a number was expected to construct a displacement.");
-								}
-							}
-
-							arg0->memAddress = memAddress;
-
-
-						}
-
-						if (arg0->regAddress == NULL && arg0->memAddress == NULL) {
-							arg0->condition = fv1->conditionWithIdentifier(arg0->value);
-						}
-					}
-					else if (line[0]->type == Lexer::TOKEN_TYPE::NUMBER || line[0]->type == Lexer::TOKEN_TYPE::MINUS) {
-						// log and exp should have as first argument a number
-						bool negative = false;
-						if (line[0]->type == Lexer::TOKEN_TYPE::MINUS) {
-							line.erase(line.begin());
-							negative = true;
-						}
-
-						if (line[0]->type == Lexer::TOKEN_TYPE::NUMBER) {
-							arg0->type = line[0]->type;
-							arg0->value = line[0]->name;
-							double coefficient = 0;
-							STR2NUMBER_ERROR err = str2dble(coefficient, line[0]->name.c_str());
-							if (err == SUCCESS) {
-								arg0->doubleValue = negative ? coefficient * -1.0 : coefficient;
-							}
-							line.erase(line.begin()); // erase number
-						}
-					}
-
-
-					if (instruction->type == RDAX || instruction->type == WRAX || instruction->type == MAXX || instruction->type == WRLX) {
-						if (arg0->regAddress == NULL) {
-							throw exception("register address is required for first argument.");
-						}
-					}
-
-					if (instruction->type == RDA || instruction->type == WRA || instruction->type == WRAP) {
-						if (arg0->memAddress == NULL) {
-							throw exception("memory is required for first argument.");
-						}
-					}
-
-					if (instruction->type == SKP) {
-						if (arg0->condition == 0) {
-							throw exception("condition is required for first argument.");
-						}
-					}
-
-					instruction->arg0 = arg0;
-
-					// next token is a comma (followed by a second argument)
-					if (line.size() > 1) {
-						if (line[0]->type == Lexer::TOKEN_TYPE::COMMA) {
-							line.erase(line.begin()); // consume the comma
-							bool negative = false;
-							// parse second argument
-							// next is optional, it can be a negative flag
-							if (line[0]->type == Lexer::TOKEN_TYPE::MINUS) {
-								negative = true;
-								line.erase(line.begin()); // consume the negative
-							}
-
-							if (line.size() > 0) {
-								Param* arg1 = new Param();
-								double coefficient = 0;
-								if (line[0]->type == Lexer::TOKEN_TYPE::NUMBER) {
-									STR2NUMBER_ERROR err = str2dble(coefficient, line[0]->name.c_str());
-									if (err == SUCCESS) {
-										arg1->doubleValue = negative ? coefficient * -1.0 : coefficient;
-
-										arg1->skipLines = unsigned int(arg0->doubleValue);
-									}
-								}
-								else if (line[0]->type == Lexer::TOKEN_TYPE::IDENTIFIER) {
-									map<string, Param>::iterator it = equMap.find(line[0]->name);
-									if (it != equMap.end()) {
-										Param p = (*it).second;
-										arg1->doubleValue = negative ? p.doubleValue * -1.0 : p.doubleValue;
-									}
-
-									map<string, unsigned int>::iterator it2 = labels.find(line[0]->name);
-									if (it2 != labels.end()) {
-										unsigned int labelAddress = (*it2).second;
-										arg1->skipLines = labelAddress - currentInstruction;
-									}
-								}
-								arg1->type = line[0]->type;
-								arg1->value = line[0]->name;
-
-								instruction->arg1 = arg1;
-
-								line.erase(line.begin());
-								// next is optional, is a comma, followed by a third argument
-								if (line.size() > 1) {
-									if (line[0]->type == Lexer::TOKEN_TYPE::COMMA) {
-										Param* arg2 = new Param();
-
-										line.erase(line.begin());
-										bool negative = false;
-										if (line[0]->type == Lexer::TOKEN_TYPE::MINUS) {
-											line.erase(line.begin());
-											negative = true;
-										}
-
-										if (line[0]->type == Lexer::TOKEN_TYPE::NUMBER) {
-											arg2->type = line[0]->type;
-											arg2->value = line[0]->name;
-
-											double coefficient = 0;
-											STR2NUMBER_ERROR err = str2dble(coefficient, line[0]->name.c_str());
-											if (err == SUCCESS) {
-												arg2->doubleValue = negative ? coefficient * -1.0 : coefficient;
-											}
-											line.erase(line.begin());
-										}
-										instruction->arg2 = arg2;
-									}
-								}
-
-								return true;
-							}
-						}
+				if (params.size() > 0) {
+					int index = 0;
+					for (vector<Param*>::iterator it = params.begin(); it != params.end(); it++) {
+						Param* param = (*it);
+						SCLogInfo(L">> Parameter: %s", param->value.c_str());
+						instruction->args[index++] = param;
 					}
 				}
-				else if (line.size() > 0) {
-					// this instruction has one argument, like mulx, ldax
-					if (line[0]->type == Lexer::TOKEN_TYPE::IDENTIFIER) {
-
-						Param* arg0 = new Param();
-						arg0->type = line[0]->type;
-						arg0->value = line[0]->name;
-						arg0->dir = FV1::Start;
-						arg0->regAddress = fv1->getAddressOfIdentifier(arg0->value);
-						if (arg0->regAddress == NULL) {
-							map<string, Param>::iterator it = equMap.find(arg0->value);
-							if (it != equMap.end()) {
-								Param param = (*it).second;
-								arg0->regAddress = param.regAddress;
-							}
-						}
-
-						if (instruction->type == MULX || instruction->type == LDAX) {
-							if (arg0->regAddress == NULL) {
-								throw exception("register address is required for first argument.");
-							}
-						}
-
-						instruction->arg0 = arg0;
-						instruction->arg1 = NULL;
-						return true;
-					}
-				}
-				else {
-					// 0 arguments, it must be absa
-					instruction->arg0 = NULL;
-					instruction->arg1 = NULL;
-					return true;
-				}
-			}
-			else {
-				throw exception("unknown instruction.");
+				SCLogInfo(L"");
+				return true;
 			}
 		}
 	}
-	else {
-		throw exception("instruction too small.");
-	}
 	return false;
+}
+
+vector<Param*> Parser::GetParameters(vector<Lexer::Token*> line, unsigned int currentInstruction) {
+	vector<Param*> parameters;
+	Param* param = GetParameter(line, currentInstruction);
+	if (param != NULL) {
+		parameters.push_back(param);
+		if (line.size() > 0) {
+			Lexer::TOKEN_TYPE type = line[0]->type;
+			if (type == Lexer::TOKEN_TYPE::COMMA) {
+				line.erase(line.begin() + 0); // remove comma
+				vector<Param*> params = GetParameters(line, currentInstruction);
+				if (params.size() > 0) {
+					parameters.insert(parameters.end(), params.begin(), params.end());
+				}
+			}
+		}
+	}
+	
+	return parameters;
+}
+
+Param* Parser::GetParameter(vector<Lexer::Token*>& line, unsigned int currentInstruction) {
+	if (line.size() > 0) {
+		FV1::MemoryPosition position = FV1::Start;
+		bool negative = false;
+		Param* arg0 = new Param();
+		
+		// first is optional
+		if (line[0]->type == Lexer::TOKEN_TYPE::MINUS) {
+			negative = true;
+			line.erase(line.begin());
+		}
+
+		if (line[0]->type == Lexer::TOKEN_TYPE::IDENTIFIER) {
+			arg0->type = line[0]->type;
+			arg0->value = line[0]->name;
+
+			line.erase(line.begin());
+
+			if (line.size() > 0) {
+				// next token is optional, it can be numeral (#) or circumflex (^)
+				// if followed by a comma, the direction specification is the default.
+				if (line[0]->type == Lexer::TOKEN_TYPE::NUMERAL || line[0]->type == Lexer::TOKEN_TYPE::CIRCUMFLEX) {
+					position = DirectionSpecificationWithType(line[0]->type);
+					line.erase(line.begin());
+				}
+			}
+			arg0->dir = position;
+
+			arg0->regAddress = fv1->getAddressOfIdentifier(arg0->value);
+			if (arg0->regAddress == NULL) {
+				map<string, Param>::iterator it = equMap.find(arg0->value);
+				if (it != equMap.end()) {
+					Param param = (*it).second;
+					arg0->regAddress = param.regAddress;
+				}
+			}
+			map<string, Memory*>::iterator it = memMap.find(arg0->value);
+			if (it != memMap.end()) {
+				MemoryAddress* memAddress = new MemoryAddress();
+				memAddress->mem = (*it).second;
+				// memory address found, look for any modifier to the memory address
+				if (line.size() > 3 && (line[0]->type == Lexer::TOKEN_TYPE::PLUS || line[0]->type == Lexer::TOKEN_TYPE::MINUS)) {
+					// there is a displacement here
+					bool negative = false;
+					if (line[0]->type == Lexer::TOKEN_TYPE::MINUS) {
+						// is negative
+						negative = true;
+					}
+					line.erase(line.begin()); // erase plus or minus token
+					if (line[0]->type == Lexer::TOKEN_TYPE::NUMBER) {
+						unsigned int displacement = 0;
+						STR2NUMBER_ERROR err = str2uint(displacement, line[0]->name.c_str());
+						if (err == SUCCESS) {
+							memAddress->displacement = negative ? displacement * -1 : displacement;
+						}
+
+						line.erase(line.begin()); // erase number
+					}
+					else {
+						throw exception("a number was expected to construct a displacement.");
+					}
+				}
+
+				arg0->memAddress = memAddress;
+			}
+
+			if (arg0->regAddress == NULL && arg0->memAddress == NULL) {
+				arg0->condition = fv1->conditionWithIdentifier(arg0->value);
+			}
+
+			map<string, Param>::iterator it3 = equMap.find(arg0->value);
+			if (it3 != equMap.end()) {
+				Param p = (*it3).second;
+				arg0->doubleValue = negative ? p.doubleValue * -1.0 : p.doubleValue;
+			}
+
+			map<string, unsigned int>::iterator it2 = labels.find(arg0->value);
+			if (it2 != labels.end()) {
+				unsigned int labelAddress = (*it2).second;
+				arg0->skipLines = labelAddress - currentInstruction;
+			}
+
+		}
+		else if (line[0]->type == Lexer::TOKEN_TYPE::NUMBER) {
+			arg0->type = line[0]->type;
+			arg0->value = line[0]->name;
+			double coefficient = 0;
+			STR2NUMBER_ERROR err = str2dble(coefficient, line[0]->name.c_str());
+			if (err == SUCCESS) {
+				arg0->doubleValue = negative ? coefficient * -1.0 : coefficient;
+			}
+			line.erase(line.begin()); // erase number
+		}
+		else {
+			throw exception("Invalid parameter type");
+		}
+		return arg0;
+	}
+	return NULL;
 }
 
 FV1::MemoryPosition Parser::DirectionSpecificationWithType(Lexer::TOKEN_TYPE& type) {
@@ -423,12 +342,14 @@ InstructionType Parser::InstructionTypeWithString(string& instruction) {
 }
 // separate statements that should be executed on first pass, and second
 // this handles label declarations followed by code
-ExecutionVectorResult Parser::generateExecutionVector(vector<vector<Lexer::Token*>> lines) {
+ExecutionVectorResult Parser::generateExecutionVector(vector<vector<Lexer::Token*>> lines, vector<string> linesStr) {
 
 	ExecutionVectorResult exec = ExecutionVectorResult();
 
-	for (vector<vector<Lexer::Token*>>::iterator it = lines.begin(); it != lines.end(); it++) {
-		vector<Lexer::Token*> v = (*it);
+	for (unsigned int i = 0; i < lines.size(); i++) {
+		vector<Lexer::Token*> v = lines[i];
+		string lineStr = linesStr[i];
+
 		SplitStatementInfo splitInfo = shouldSplitStatements(v);
 		if (splitInfo.shouldSplit) {
 			string label = splitInfo.labelDeclared;
@@ -437,14 +358,17 @@ ExecutionVectorResult Parser::generateExecutionVector(vector<vector<Lexer::Token
 
 			if (splitInfo.secondPassStatement.size() > 0) {
 				exec.secondPass.push_back(splitInfo.secondPassStatement);
+				exec.secondPassRawLines.push_back(lineStr);
 			}
 		}
 		else {
 			if (isFirstPassStatement(v)) {
 				exec.firstPass.push_back(v);
+				exec.firstPassRawLines.push_back(lineStr);
 			}
 			else {
 				exec.secondPass.push_back(v);
+				exec.secondPassRawLines.push_back(lineStr);
 			}
 		}
 	}

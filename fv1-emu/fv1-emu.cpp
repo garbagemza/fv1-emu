@@ -279,7 +279,6 @@ void SpinSoundDelegate::willBeginPlay() {
 		}
 		memCount = index;
 
-		map<string, Param> equates = spinFile->equMap;
 		if (memories.size() == memCount) {
 			spinFile->passOneSemanticSucceeded = true;
 		}
@@ -341,80 +340,80 @@ BOOL SpinSoundDelegate::ExecuteInstruction(Instruction* inst, unsigned int index
 	switch (inst->type) {
 	case RDAX:
 	{
-		double* regValue = inst->arg0->regAddress;
-		fv1->rdax((*regValue), inst->arg1->doubleValue);
+		double* regValue = inst->args[0]->regAddress;
+		fv1->rdax((*regValue), inst->args[1]->doubleValue);
 		return true;
 	}
 	break;
 	case RDA:
 	{
-		fv1->rda(inst->arg0->memAddress, inst->arg0->dir, inst->arg1->doubleValue);
+		fv1->rda(inst->args[0]->memAddress, inst->args[0]->dir, inst->args[1]->doubleValue);
 		return true;
 	}
 	break;
 	case WRAP:
 	{
-		fv1->wrap(inst->arg0->memAddress->mem, inst->arg1->doubleValue);
+		fv1->wrap(inst->args[0]->memAddress->mem, inst->args[1]->doubleValue);
 		return true;
 	}
 	break;
 	case WRAX:
 	{
-		fv1->wrax(inst->arg0->regAddress, inst->arg1->doubleValue);
+		fv1->wrax(inst->args[0]->regAddress, inst->args[1]->doubleValue);
 		return true;
 	}
 	break;
 	case WRA:
 	{
-		fv1->wra(inst->arg0->memAddress->mem, inst->arg1->doubleValue);
+		fv1->wra(inst->args[0]->memAddress->mem, inst->args[1]->doubleValue);
 		return true;
 	}
 	break;
 	case MULX:
 	{
-		fv1->mulx(inst->arg0->regAddress);
+		fv1->mulx(inst->args[0]->regAddress);
 		return true;
 	}
 	break;
 	case RDFX:
 	{
-		fv1->rdfx(inst->arg0->regAddress, inst->arg1->doubleValue);
+		fv1->rdfx(inst->args[0]->regAddress, inst->args[1]->doubleValue);
 		return true;
 	}
 	break;
 	case LOG:
 	{
-		fv1->fv1log(inst->arg0->doubleValue, inst->arg1->doubleValue);
+		fv1->fv1log(inst->args[0]->doubleValue, inst->args[1]->doubleValue);
 		return true;
 	}
 	break;
 	case EXP:
 	{
-		fv1->fv1exp(inst->arg0->doubleValue, inst->arg1->doubleValue);
+		fv1->fv1exp(inst->args[0]->doubleValue, inst->args[1]->doubleValue);
 		return true;
 	}
 	break;
 	case SOF:
 	{
-		fv1->sof(inst->arg0->doubleValue, inst->arg1->doubleValue);
+		fv1->sof(inst->args[0]->doubleValue, inst->args[1]->doubleValue);
 		return true;
 	}
 	break;
 	case MAXX:
 	{
-		fv1->maxx(inst->arg0->regAddress, inst->arg1->doubleValue);
+		fv1->maxx(inst->args[0]->regAddress, inst->args[1]->doubleValue);
 		return true;
 	}
 	break;
 	case LDAX:
 	{
-		fv1->ldax(inst->arg0->regAddress);
+		fv1->ldax(inst->args[0]->regAddress);
 		return true;
 	}
 	break;
 	case SKP:
 	{
-		FV1::SkipCondition condition = inst->arg0->condition;
+		FV1::SkipCondition condition = inst->args[0]->condition;
 		bool executeSkip = false;
 		switch (condition) {
 		case FV1::RUN:
@@ -434,7 +433,7 @@ BOOL SpinSoundDelegate::ExecuteInstruction(Instruction* inst, unsigned int index
 			break;
 		}
 
-		skipLines = executeSkip ? inst->arg1->skipLines : 0;
+		skipLines = executeSkip ? inst->args[1]->skipLines : 0;
 
 		return true;
 	}
@@ -447,13 +446,13 @@ BOOL SpinSoundDelegate::ExecuteInstruction(Instruction* inst, unsigned int index
 	break;
 	case WRLX:
 	{
-		fv1->wrlx(inst->arg0->regAddress, inst->arg1->doubleValue);
+		fv1->wrlx(inst->args[0]->regAddress, inst->args[1]->doubleValue);
 		return true;
 	}
 	break;
 	case WRHX:
 	{
-		fv1->wrhx(inst->arg0->regAddress, inst->arg1->doubleValue);
+		fv1->wrhx(inst->args[0]->regAddress, inst->args[1]->doubleValue);
 		return true;
 	}
 	break;
@@ -542,7 +541,7 @@ void LoadFile(HANDLE file, FV1* fv1) {
 
 					// pass two, check if all instructions can be interpreted
 					// gather all instructions
-					PassTwoResult passTwoResult = parser.PassTwoParse(lexicalResult.secondPass);
+					PassTwoResult passTwoResult = parser.PassTwoParse(lexicalResult.secondPass, lexicalResult.secondPassRawLines);
 					if (passTwoResult.success) {
 
 						spinResult = new SpinFile();
