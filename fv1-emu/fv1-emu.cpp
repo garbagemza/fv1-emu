@@ -532,16 +532,17 @@ void LoadFile(HANDLE file, FV1* fv1) {
 	
 		BOOL read = ReadFile(file, lpBuffer, size, &numberOfBytesRead, NULL);
 		if (read && numberOfBytesRead == size) {
+			Parser parser = Parser();
 			// gather all code lines for execution
-			ExecutionVectorResult lexicalResult = beginLexicalAnalysis(lpBuffer, size);
+			ExecutionVectorResult lexicalResult = parser.beginLexicalAnalysis(lpBuffer, size);
 			if (lexicalResult.success) {
 				// do pass one; gather all delay memory and equates
-				PassOneResult passOneResult = PassOneParse(fv1, lexicalResult.firstPass);
+				PassOneResult passOneResult = parser.PassOneParse(fv1, lexicalResult.firstPass);
 				if (passOneResult.success) {
 
 					// pass two, check if all instructions can be interpreted
 					// gather all instructions
-					PassTwoResult passTwoResult = PassTwoParse(fv1, passOneResult.equatesMap, passOneResult.memoryMap, lexicalResult.labels, lexicalResult.secondPass);
+					PassTwoResult passTwoResult = parser.PassTwoParse(fv1, passOneResult.equatesMap, passOneResult.memoryMap, lexicalResult.labels, lexicalResult.secondPass);
 					if (passTwoResult.success) {
 						spinResult = new SpinFile();
 						spinResult->passOne = passOneResult;
