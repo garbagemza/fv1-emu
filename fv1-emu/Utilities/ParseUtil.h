@@ -1,4 +1,11 @@
 #pragma once
+#ifdef OVERFLOW
+	#undef OVERFLOW
+#endif
+
+#ifdef UNDERFLOW
+	#undef UNDERFLOW
+#endif
 
 enum STR2NUMBER_ERROR { 
 	SUCCESS, 

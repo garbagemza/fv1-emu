@@ -30,6 +30,9 @@
     <ClCompile Include="Utilities\SCLog.cpp">
       <Filter>Utilities</Filter>
     </ClCompile>
+    <ClCompile Include="Services\Parser.cpp">
+      <Filter>Services</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="fv1-emu.h" />
@@ -64,6 +67,9 @@
     </ClInclude>
     <ClInclude Include="Utilities\SCLog.h">
       <Filter>Utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="Services\Parser.h">
+      <Filter>Services</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
