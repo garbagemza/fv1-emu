@@ -112,6 +112,7 @@ PassTwoResult Parser::PassTwoParse(vector<vector<Lexer::Token*>> lines, vector<s
 			result.instructions[index] = inst;
 		}
 		else {
+			SCLogError(L"Unable to parse line %s", lineStr.c_str());
 			return result;
 		}
 		index++;
@@ -402,18 +403,15 @@ SplitStatementInfo Parser::shouldSplitStatements(vector<Lexer::Token*> line) {
 	return splitInfo;
 }
 BOOL Parser::isFirstPassStatement(vector<Lexer::Token*> v) {
-	if (v.size() == 3) {
-		Lexer::TOKEN_TYPE type = v[0]->type;
-		if (type == Lexer::TOKEN_TYPE::IDENTIFIER) {
-			string id = v[0]->name;
-			if (id.compare("mem") == 0) {
-				return true;
-			}
-			else if (id.compare("equ") == 0) {
-				return true;
-			}
+	Lexer::TOKEN_TYPE type = v[0]->type;
+	if (type == Lexer::TOKEN_TYPE::IDENTIFIER) {
+		string id = v[0]->name;
+		if (id.compare("mem") == 0) {
+			return true;
+		}
+		else if (id.compare("equ") == 0) {
+			return true;
 		}
 	}
-
 	return false;
 }
