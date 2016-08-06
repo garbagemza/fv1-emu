@@ -88,7 +88,7 @@ Lexer::Token* Lexer::getNextToken() {
 		}
 		else {
 			// Not an operator - so it's the beginning of another token.
-			if (isalpha(c)) {
+			if (isAlpha(c)) {
 				return this->process_identifier();
 			}
 			else if (isdigit(c)) {
@@ -101,6 +101,28 @@ Lexer::Token* Lexer::getNextToken() {
 		}
 	}
 	return token;
+}
+
+bool Lexer::isAlpha(char c) {
+	if (isalpha(c)) {
+		return true;
+	}
+	if (c == '_')
+		return true;
+
+	return false;
+}
+
+bool Lexer::isAlNum(char c) {
+	if (isAlpha(c)) {
+		return true;
+	}
+
+	if (isdigit(c)) {
+		return true;
+	}
+
+	return false;
 }
 
 void Lexer::skipNonTokens() {
@@ -147,7 +169,7 @@ Lexer::Token* Lexer::process_identifier() {
 
 	while (pos < buflen) {
 		char c = ((char*)lpBuffer)[pos];
-		if (!isalnum(c)) {
+		if (!isAlNum(c)) {
 			break;
 		}
 		tok->name.push_back(c);

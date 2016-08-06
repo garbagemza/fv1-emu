@@ -41,6 +41,9 @@ public:
 
 private:
 	bool hasNextToken();
+	bool isAlpha(char c);
+	bool isAlNum(char c);
+
 	Token* getNextToken();
 	void skipNonTokens();
 	Token* processComments();
