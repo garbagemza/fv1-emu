@@ -23,6 +23,8 @@ public:
 		COMMENT,
 		IDENTIFIER,
 		NUMBER,
+		LESS_THAN,
+		GREATER_THAN
 	};
 
 	struct Token

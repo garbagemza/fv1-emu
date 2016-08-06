@@ -12,6 +12,8 @@ Lexer::Lexer(void* lpBuffer, unsigned int size) {
 	optable['\n'] = NEWLINE;
 	optable['\r'] = NEWLINE;
 	optable['|'] = VERTICAL_BAR;
+	optable['<'] = LESS_THAN;
+	optable['>'] = GREATER_THAN;
 
 	this->buflen = size;
 	this->lpBuffer = lpBuffer;
