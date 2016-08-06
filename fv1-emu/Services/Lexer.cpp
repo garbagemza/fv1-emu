@@ -91,7 +91,7 @@ Lexer::Token* Lexer::getNextToken() {
 			if (isAlpha(c)) {
 				return this->process_identifier();
 			}
-			else if (isdigit(c)) {
+			else if (isDigitOrDot(c)) {
 				return this->process_number();
 			}
 			else {
@@ -101,6 +101,18 @@ Lexer::Token* Lexer::getNextToken() {
 		}
 	}
 	return token;
+}
+
+bool Lexer::isDigitOrDot(char c) {
+	if (isdigit(c)) {
+		return true;
+	}
+
+	if (c == '.') {
+		return true;
+	}
+
+	return false;
 }
 
 bool Lexer::isAlpha(char c) {
