@@ -249,7 +249,7 @@ Param* Parser::GetParameter(vector<Lexer::Token*>& line, unsigned int currentIns
 			map<string, unsigned int>::iterator it2 = labels.find(arg0->value);
 			if (it2 != labels.end()) {
 				unsigned int labelAddress = (*it2).second;
-				arg0->skipLines = labelAddress - currentInstruction;
+				arg0->doubleValue = labelAddress - currentInstruction;
 			}
 
 		}

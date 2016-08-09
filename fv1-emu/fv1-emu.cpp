@@ -417,7 +417,7 @@ BOOL SpinSoundDelegate::ExecuteInstruction(Instruction* inst, unsigned int index
 		bool executeSkip = false;
 		switch (condition) {
 		case FV1::RUN:
-			executeSkip = index > 0;
+			executeSkip = true;		// the machine is already running
 			break;
 		case FV1::ZRC:
 			executeSkip = fv1->zrc();
@@ -433,7 +433,7 @@ BOOL SpinSoundDelegate::ExecuteInstruction(Instruction* inst, unsigned int index
 			break;
 		}
 
-		skipLines = executeSkip ? inst->args[1]->skipLines : 0;
+		skipLines = executeSkip ? (unsigned int)inst->args[1]->doubleValue : 0;
 
 		return true;
 	}

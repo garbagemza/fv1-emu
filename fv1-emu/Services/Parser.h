@@ -14,7 +14,6 @@ struct Param
 
 	// used for skp instruction
 	FV1::SkipCondition condition;
-	unsigned int skipLines;
 
 	Param() {
 		dir = FV1::Start;
@@ -22,7 +21,6 @@ struct Param
 		regAddress = 0;
 		memAddress = 0;
 		condition = FV1::UNKNOWN;
-		skipLines = 0;
 	}
 };
 
