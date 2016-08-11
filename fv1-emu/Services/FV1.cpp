@@ -3,6 +3,14 @@
 #include "..\Manager\MemoryManager.h"
 #include "..\Utilities\MathUtils.h"
 
+#include <cassert>
+
+#define _USE_MATH_DEFINES
+#include <math.h>
+
+
+#define FV1_SAMPLE_RATE 32768
+
 void FV1::mem(Memory** memory, unsigned int size) {
 	*memory = MemoryManager::createMemory(size);
 }
@@ -23,6 +31,7 @@ void FV1::rda(MemoryAddress* mem, MemoryPosition pos, double coefficient) {
 		break;
 	case Middle:
 		//tmp = MemoryManager::getValueAtMiddle(mem);
+		assert(false); // not implemented yet
 		break;
 	case End:
 		tmp = MemoryManager::getValueAtStart(mem);
@@ -118,6 +127,21 @@ void FV1::wrhx(double* reg_addr, double coefficient) {
 	acc = tmpAcc;
 }
 
+void FV1::wlds(SineOscillator osc, unsigned int Kf, unsigned int Ka) {
+	switch (osc) {
+	case SIN0:
+		sin0_rate = (double)Kf * (double)FV1_SAMPLE_RATE / (131072.0 * 2.0 * M_PI);
+		sin0_range = (unsigned int)(floor((double)Ka * 16385.0 / 32767.0 + 0.5));
+		break;
+	case SIN1:
+		sin1_rate = (double)Kf * (double)FV1_SAMPLE_RATE / (131072.0 * 2.0 * M_PI);
+		sin1_range = (unsigned int)(floor((double)Ka * 16385.0 / 32767.0 + 0.5));
+		break;
+	}
+}
+
+
+
 bool FV1::zrc() {
 	return signbit(pacc) != signbit(acc);
 }
@@ -133,6 +157,7 @@ bool FV1::gez() {
 bool FV1::neg() {
 	return signbit(acc);
 }
+
 
 // increments indexes by one
 // when reaching the end of the buffer, they start again in zero, making a circular buffer
@@ -280,4 +305,16 @@ FV1::SkipCondition FV1::conditionWithIdentifier(string id) {
 	}
 
 	return FV1::UNKNOWN;
+}
+
+FV1::SineOscillator FV1::oscillatorWithIdentifier(string id) {
+	if (_stricmp(id.c_str(), "sin0") == 0) {
+		return FV1::SIN0;
+	}
+	else if (_stricmp(id.c_str() , "sin1") == 0) {
+		return FV1::SIN1;
+	}
+
+	// default
+	return FV1::SIN0;
 }

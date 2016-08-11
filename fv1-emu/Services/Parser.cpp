@@ -128,10 +128,10 @@ BOOL Parser::LoadInstructionWithInstructionLine(vector<Lexer::Token*> line, unsi
 		Lexer::TOKEN_TYPE type = line[0]->type;
 		if (type == Lexer::TOKEN_TYPE::IDENTIFIER) {
 			string inst = line[0]->name;
-			InstructionType type = InstructionTypeWithString(inst);
-			if (type != UNKNOWN) {
+			Opcode opcode = InstructionOpcodeWithString(inst);
+			if (opcode != UNKNOWN) {
 				line.erase(line.begin() + 0); // remove first element
-				instruction->type = type;
+				instruction->opcode = opcode;
 				vector<Param*> params = GetParameters(line, currentInstruction);
 
 				if (params.size() > 0) {
@@ -238,6 +238,7 @@ Param* Parser::GetParameter(vector<Lexer::Token*>& line, unsigned int currentIns
 
 			if (arg0->regAddress == NULL && arg0->memAddress == NULL) {
 				arg0->condition = fv1->conditionWithIdentifier(arg0->value);
+				arg0->osc = fv1->oscillatorWithIdentifier(arg0->value);
 			}
 
 			map<string, Param>::iterator it3 = equMap.find(arg0->value);
@@ -282,7 +283,7 @@ FV1::MemoryPosition Parser::DirectionSpecificationWithType(Lexer::TOKEN_TYPE& ty
 	}
 }
 
-InstructionType Parser::InstructionTypeWithString(string& instruction) {
+Opcode Parser::InstructionOpcodeWithString(string& instruction) {
 	if (instruction.compare("rdax") == 0) {
 		return RDAX;
 	}

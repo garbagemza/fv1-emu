@@ -22,6 +22,11 @@ public:
 		End
 	};
 
+	enum SineOscillator {
+		SIN0,
+		SIN1
+	};
+
 	enum Register {
 		ADCL,
 		ADCR,
@@ -117,6 +122,13 @@ public:
 	double reg30 = 0;
 	double reg31 = 0;
 
+	// oscillators
+	double sin0_rate = 0.0;
+	double sin1_rate = 0.0;
+
+	unsigned int sin0_range = 0;
+	unsigned int sin1_range = 0;
+
 
 	void mem(Memory** addr, unsigned int size);
 	void rdax(double regValue, double coefficient);
@@ -135,6 +147,7 @@ public:
 	void absa();
 	void wrlx(double* reg_addr, double coefficient);
 	void wrhx(double* reg_addr, double coefficient);
+	void wlds(SineOscillator osc, unsigned int frequencyCoefficient, unsigned int amplitudeCoefficient);
 
 	// used for conditions
 	bool zrc();
@@ -146,6 +159,7 @@ public:
 	void updm(Memory* mem);
 	double* getAddressOfIdentifier(string id);
 	SkipCondition conditionWithIdentifier(string id);
+	SineOscillator oscillatorWithIdentifier(string id);
 	double* getRegisterAddressWithName(string name);
 	
 };

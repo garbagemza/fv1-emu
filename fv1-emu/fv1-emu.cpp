@@ -49,6 +49,7 @@ class SpinSoundDelegate : public ISoundDelegate {
 	unsigned int memCount = 0;
 	Memory* memoryArray[128];
 
+	bool isFirstExecution;
 
 public:
 	SpinSoundDelegate(SpinFile* spinFile) {
@@ -282,6 +283,8 @@ void SpinSoundDelegate::willBeginPlay() {
 		if (memories.size() == memCount) {
 			spinFile->passOneSemanticSucceeded = true;
 		}
+
+		isFirstExecution = true;
 	}
 }
 
@@ -308,7 +311,7 @@ void SpinSoundDelegate::getAudioChunk(LPVOID buffer, DWORD sampleCount, DWORD &d
 			for (unsigned int i = 0; i < instructionCount; i++) {
 				Instruction* inst = instructions[i];
 				unsigned int skipLines = 0;
-				bool ok = ExecuteInstruction(inst, i, skipLines);
+				BOOL ok = ExecuteInstruction(inst, i, skipLines);
 				if (ok && skipLines != 0) {
 					i += skipLines;
 				}
@@ -318,6 +321,9 @@ void SpinSoundDelegate::getAudioChunk(LPVOID buffer, DWORD sampleCount, DWORD &d
 			}
 
 			UpdateDelayMemories();
+			if (isFirstExecution) {
+				isFirstExecution = false;
+			}
 		}
 		else {
 			// if not spin file loaded then copy input registers to output registers
@@ -337,7 +343,7 @@ void SpinSoundDelegate::getAudioChunk(LPVOID buffer, DWORD sampleCount, DWORD &d
 
 BOOL SpinSoundDelegate::ExecuteInstruction(Instruction* inst, unsigned int index, unsigned int & skipLines) {
 
-	switch (inst->type) {
+	switch (inst->opcode) {
 	case RDAX:
 	{
 		double* regValue = inst->args[0]->regAddress;
@@ -417,7 +423,7 @@ BOOL SpinSoundDelegate::ExecuteInstruction(Instruction* inst, unsigned int index
 		bool executeSkip = false;
 		switch (condition) {
 		case FV1::RUN:
-			executeSkip = true;		// the machine is already running
+			executeSkip = !isFirstExecution;
 			break;
 		case FV1::ZRC:
 			executeSkip = fv1->zrc();
@@ -456,8 +462,13 @@ BOOL SpinSoundDelegate::ExecuteInstruction(Instruction* inst, unsigned int index
 		return true;
 	}
 	break;
+	case WLDS:
+	{
+		FV1::SineOscillator osc = inst->args[0]->osc;
+		fv1->wlds(osc, inst->args[1]->doubleValue, inst->args[2]->doubleValue);
+		return true;
 	}
-
+	}
 	return false;
 }
 

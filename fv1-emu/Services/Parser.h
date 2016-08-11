@@ -14,6 +14,7 @@ struct Param
 
 	// used for skp instruction
 	FV1::SkipCondition condition;
+	FV1::SineOscillator osc;
 
 	Param() {
 		dir = FV1::Start;
@@ -21,10 +22,11 @@ struct Param
 		regAddress = 0;
 		memAddress = 0;
 		condition = FV1::UNKNOWN;
+		osc = FV1::SIN0;
 	}
 };
 
-enum InstructionType {
+enum Opcode {
 	UNKNOWN,
 	RDAX,
 	RDA,
@@ -49,7 +51,7 @@ enum InstructionType {
 
 struct Instruction
 {
-	InstructionType type;
+	Opcode opcode;
 	Param* args[5];
 };
 
@@ -104,7 +106,7 @@ class Parser {
 	vector<Param*>			GetParameters(vector<Lexer::Token*> line, unsigned int);
 	Param*					GetParameter(vector<Lexer::Token*>& line, unsigned int);
 
-	InstructionType			InstructionTypeWithString(string&);
+	Opcode					InstructionOpcodeWithString(string&);
 	FV1::MemoryPosition		DirectionSpecificationWithType(Lexer::TOKEN_TYPE&);
 
 
