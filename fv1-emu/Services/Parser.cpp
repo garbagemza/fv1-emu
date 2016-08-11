@@ -3,6 +3,7 @@
 #include "..\Utilities\ParseUtil.h"
 #include "..\Manager\MemoryManager.h"
 #include "..\Utilities\SCLog.h"
+#include <cassert>
 
 Parser::Parser(FV1* fv1) {
 	this->fv1 = fv1;
@@ -133,6 +134,13 @@ BOOL Parser::LoadInstructionWithInstructionLine(vector<Lexer::Token*> line, unsi
 				line.erase(line.begin() + 0); // remove first element
 				instruction->opcode = opcode;
 				vector<Param*> params = GetParameters(line, currentInstruction);
+				if (params.size()) {
+					if (opcode == CHO) {
+						// get first parameter to complete the opcode, and remove it from the parameter list.
+						instruction->opcode = opcodeWithSecondaryOpcode(opcode, params[0]->value);
+						params.erase(params.begin() + 0); // remove first param as is used in opcode value.
+					}
+				}
 
 				if (params.size() > 0) {
 					int index = 0;
@@ -415,4 +423,15 @@ BOOL Parser::isFirstPassStatement(vector<Lexer::Token*> v) {
 		}
 	}
 	return false;
+}
+
+Opcode Parser::opcodeWithSecondaryOpcode(Opcode opcode, string subOpcode) {
+	if (opcode == CHO) {
+		if (_stricmp(subOpcode.c_str(), "rda") == 0) {
+			return CHO_RDA;
+		}
+	}
+
+	assert(false); // invalid arguments
+	
 }

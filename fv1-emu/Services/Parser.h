@@ -45,7 +45,8 @@ enum Opcode {
 	WRLX,
 	WRHX,
 	WLDS,
-	CHO,
+	CHO,		// only used by the parser, the interpreter does not recognize this opcode
+	CHO_RDA,
 
 };
 
@@ -108,7 +109,7 @@ class Parser {
 
 	Opcode					InstructionOpcodeWithString(string&);
 	FV1::MemoryPosition		DirectionSpecificationWithType(Lexer::TOKEN_TYPE&);
-
+	Opcode					opcodeWithSecondaryOpcode(Opcode opcode, string subOpcode);
 
 	FV1* fv1;
 
