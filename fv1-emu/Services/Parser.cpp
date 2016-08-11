@@ -284,58 +284,58 @@ FV1::MemoryPosition Parser::DirectionSpecificationWithType(Lexer::TOKEN_TYPE& ty
 }
 
 Opcode Parser::InstructionOpcodeWithString(string& instruction) {
-	if (instruction.compare("rdax") == 0) {
+	if (_stricmp(instruction.c_str(), "rdax") == 0) {
 		return RDAX;
 	}
-	else if (instruction.compare("rda") == 0) {
+	else if (_stricmp(instruction.c_str(), "rda") == 0) {
 		return RDA;
 	}
-	else if (instruction.compare("wrap") == 0) {
+	else if (_stricmp(instruction.c_str(), "wrap") == 0) {
 		return WRAP;
 	}
-	else if (instruction.compare("wrax") == 0) {
+	else if (_stricmp(instruction.c_str(), "wrax") == 0) {
 		return WRAX;
 	}
-	else if (instruction.compare("wra") == 0) {
+	else if (_stricmp(instruction.c_str(), "wra") == 0) {
 		return WRA;
 	}
-	else if (instruction.compare("mulx") == 0) {
+	else if (_stricmp(instruction.c_str(), "mulx") == 0) {
 		return MULX;
 	}
-	else if (instruction.compare("rdfx") == 0) {
+	else if (_stricmp(instruction.c_str(), "rdfx") == 0) {
 		return RDFX;
 	}
-	else if (instruction.compare("log") == 0) {
+	else if (_stricmp(instruction.c_str(), "log") == 0) {
 		return LOG;
 	}
-	else if (instruction.compare("exp") == 0) {
+	else if (_stricmp(instruction.c_str(), "exp") == 0) {
 		return EXP;
 	}
-	else if (instruction.compare("sof") == 0) {
+	else if (_stricmp(instruction.c_str(), "sof") == 0) {
 		return SOF;
 	}
-	else if (instruction.compare("maxx") == 0) {
+	else if (_stricmp(instruction.c_str(), "maxx") == 0) {
 		return MAXX;
 	}
-	else if (instruction.compare("ldax") == 0) {
+	else if (_stricmp(instruction.c_str(), "ldax") == 0) {
 		return LDAX;
 	}
-	else if (instruction.compare("skp") == 0) {
+	else if (_stricmp(instruction.c_str(), "skp") == 0) {
 		return SKP;
 	}
-	else if (instruction.compare("absa") == 0) {
+	else if (_stricmp(instruction.c_str(), "absa") == 0) {
 		return ABSA;
 	}
-	else if (instruction.compare("wrlx") == 0) {
+	else if (_stricmp(instruction.c_str(), "wrlx") == 0) {
 		return WRLX;
 	}
-	else if (instruction.compare("wrhx") == 0) {
+	else if (_stricmp(instruction.c_str(), "wrhx") == 0) {
 		return WRHX;
 	}
-	else if (instruction.compare("wlds") == 0) {
+	else if (_stricmp(instruction.c_str(), "wlds") == 0) {
 		return WLDS;
 	}
-	else if (instruction.compare("cho") == 0) {
+	else if (_stricmp(instruction.c_str(), "cho") == 0) {
 		return CHO;
 	}
 	else {
@@ -407,10 +407,10 @@ BOOL Parser::isFirstPassStatement(vector<Lexer::Token*> v) {
 	Lexer::TOKEN_TYPE type = v[0]->type;
 	if (type == Lexer::TOKEN_TYPE::IDENTIFIER) {
 		string id = v[0]->name;
-		if (id.compare("mem") == 0) {
+		if (_stricmp(id.c_str(), "mem") == 0) {
 			return true;
 		}
-		else if (id.compare("equ") == 0) {
+		else if (_stricmp(id.c_str(), "equ") == 0) {
 			return true;
 		}
 	}

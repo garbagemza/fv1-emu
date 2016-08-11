@@ -140,8 +140,6 @@ void FV1::wlds(SineOscillator osc, unsigned int Kf, unsigned int Ka) {
 	}
 }
 
-
-
 bool FV1::zrc() {
 	return signbit(pacc) != signbit(acc);
 }
@@ -166,121 +164,121 @@ void FV1::updm(Memory* mem) {
 }
 
 double* FV1::getAddressOfIdentifier(string id) {
-	if (id.compare("adcl") == 0) {
+	if (_stricmp(id.c_str(), "adcl") == 0) {
 		return &adcl;
 	}
-	else if (id.compare("adcr") == 0) {
+	else if (_stricmp(id.c_str(), "adcr") == 0) {
 		return &adcr;
 	}
-	else if (id.compare("dacl") == 0) {
+	else if (_stricmp(id.c_str(), "dacl") == 0) {
 		return &dacl;
 	}
-	else if (id.compare("dacr") == 0) {
+	else if (_stricmp(id.c_str(), "dacr") == 0) {
 		return &dacr;
 	}
-	else if (id.compare("pot0") == 0) {
+	else if (_stricmp(id.c_str(), "pot0") == 0) {
 		return &pot0;
 	}
-	else if (id.compare("pot1") == 0) {
+	else if (_stricmp(id.c_str(), "pot1") == 0) {
 		return &pot1;
 	}
-	else if (id.compare("pot2") == 0) {
+	else if (_stricmp(id.c_str(), "pot2") == 0) {
 		return &pot2;
 	}
-	else if (id.compare("reg0") == 0) {
+	else if (_stricmp(id.c_str(), "reg0") == 0) {
 		return &reg0;
 	}
-	else if (id.compare("reg1") == 0) {
+	else if (_stricmp(id.c_str(), "reg1") == 0) {
 		return &reg1;
 	}
-	else if (id.compare("reg2") == 0) {
+	else if (_stricmp(id.c_str(), "reg2") == 0) {
 		return &reg2;
 	}
-	else if (id.compare("reg3") == 0) {
+	else if (_stricmp(id.c_str(), "reg3") == 0) {
 		return &reg3;
 	}
-	else if (id.compare("reg4") == 0) {
+	else if (_stricmp(id.c_str(), "reg4") == 0) {
 		return &reg4;
 	}
-	else if (id.compare("reg5") == 0) {
+	else if (_stricmp(id.c_str(), "reg5") == 0) {
 		return &reg5;
 	}
-	else if (id.compare("reg6") == 0) {
+	else if (_stricmp(id.c_str(), "reg6") == 0) {
 		return &reg6;
 	}
-	else if (id.compare("reg7") == 0) {
+	else if (_stricmp(id.c_str(), "reg7") == 0) {
 		return &reg7;
 	}
-	else if (id.compare("reg8") == 0) {
+	else if (_stricmp(id.c_str(), "reg8") == 0) {
 		return &reg8;
 	}
-	else if (id.compare("reg9") == 0) {
+	else if (_stricmp(id.c_str(), "reg9") == 0) {
 		return &reg9;
 	}
-	else if (id.compare("reg10") == 0) {
+	else if (_stricmp(id.c_str(), "reg10") == 0) {
 		return &reg10;
 	}
-	else if (id.compare("reg11") == 0) {
+	else if (_stricmp(id.c_str(), "reg11") == 0) {
 		return &reg11;
 	}
-	else if (id.compare("reg12") == 0) {
+	else if (_stricmp(id.c_str(), "reg12") == 0) {
 		return &reg12;
 	}
-	else if (id.compare("reg13") == 0) {
+	else if (_stricmp(id.c_str(), "reg13") == 0) {
 		return &reg13;
 	}
-	else if (id.compare("reg14") == 0) {
+	else if (_stricmp(id.c_str(), "reg14") == 0) {
 		return &reg14;
 	}
-	else if (id.compare("reg15") == 0) {
+	else if (_stricmp(id.c_str(), "reg15") == 0) {
 		return &reg15;
 	}
-	else if (id.compare("reg16") == 0) {
+	else if (_stricmp(id.c_str(), "reg16") == 0) {
 		return &reg16;
 	}
-	else if (id.compare("reg17") == 0) {
+	else if (_stricmp(id.c_str(), "reg17") == 0) {
 		return &reg17;
 	}
-	else if (id.compare("reg18") == 0) {
+	else if (_stricmp(id.c_str(), "reg18") == 0) {
 		return &reg18;
 	}
-	else if (id.compare("reg19") == 0) {
+	else if (_stricmp(id.c_str(), "reg19") == 0) {
 		return &reg19;
 	}
-	else if (id.compare("reg20") == 0) {
+	else if (_stricmp(id.c_str(), "reg20") == 0) {
 		return &reg20;
 	}
-	else if (id.compare("reg21") == 0) {
+	else if (_stricmp(id.c_str(), "reg21") == 0) {
 		return &reg21;
 	}
-	else if (id.compare("reg22") == 0) {
+	else if (_stricmp(id.c_str(), "reg22") == 0) {
 		return &reg22;
 	}
-	else if (id.compare("reg23") == 0) {
+	else if (_stricmp(id.c_str(), "reg23") == 0) {
 		return &reg23;
 	}
-	else if (id.compare("reg24") == 0) {
+	else if (_stricmp(id.c_str(), "reg24") == 0) {
 		return &reg24;
 	}
-	else if (id.compare("reg25") == 0) {
+	else if (_stricmp(id.c_str(), "reg25") == 0) {
 		return &reg25;
 	}
-	else if (id.compare("reg26") == 0) {
+	else if (_stricmp(id.c_str(), "reg26") == 0) {
 		return &reg26;
 	}
-	else if (id.compare("reg27") == 0) {
+	else if (_stricmp(id.c_str(), "reg27") == 0) {
 		return &reg27;
 	}
-	else if (id.compare("reg28") == 0) {
+	else if (_stricmp(id.c_str(), "reg28") == 0) {
 		return &reg28;
 	}
-	else if (id.compare("reg29") == 0) {
+	else if (_stricmp(id.c_str(), "reg29") == 0) {
 		return &reg29;
 	}
-	else if (id.compare("reg30") == 0) {
+	else if (_stricmp(id.c_str(), "reg30") == 0) {
 		return &reg30;
 	}
-	else if (id.compare("reg31") == 0) {
+	else if (_stricmp(id.c_str(), "reg31") == 0) {
 		return &reg31;
 	}
 
@@ -288,19 +286,19 @@ double* FV1::getAddressOfIdentifier(string id) {
 }
 
 FV1::SkipCondition FV1::conditionWithIdentifier(string id) {
-	if (id.compare("run") == 0) {
+	if (_stricmp(id.c_str(), "run") == 0) {
 		return FV1::RUN;
 	}
-	else if (id.compare("zrc") == 0) {
+	else if (_stricmp(id.c_str(), "zrc") == 0) {
 		return FV1::ZRC;
 	}
-	else if (id.compare("zro") == 0) {
+	else if (_stricmp(id.c_str(), "zro") == 0) {
 		return FV1::ZRO;
 	}
-	else if (id.compare("gez") == 0) {
+	else if (_stricmp(id.c_str(), "gez") == 0) {
 		return FV1::GEZ;
 	}
-	else if (id.compare("neg") == 0) {
+	else if (_stricmp(id.c_str(), "neg") == 0) {
 		return FV1::NEG;
 	}
 
