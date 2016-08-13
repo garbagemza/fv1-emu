@@ -2,11 +2,13 @@
 #include "Lexer.h"
 #include "FV1.h"
 
+enum MemoryPosition;
+
+
 struct Param
 {
 	Lexer::TOKEN_TYPE type;
 	string value;
-	FV1::MemoryPosition dir;
 	double doubleValue;
 
 	double* regAddress;
@@ -14,15 +16,16 @@ struct Param
 
 	// used for skp instruction
 	FV1::SkipCondition condition;
-	FV1::SineOscillator osc;
+	FV1::LFOType osc;
+	int choFlags;
 
 	Param() {
-		dir = FV1::Start;
 		doubleValue = 0;
 		regAddress = 0;
 		memAddress = 0;
 		condition = FV1::UNKNOWN;
 		osc = FV1::SIN0;
+		choFlags = CHOFlags::UNKNOWN_CHO_FLAG;
 	}
 };
 
@@ -49,6 +52,7 @@ enum Opcode {
 	CHO_RDA,
 
 };
+
 
 struct Instruction
 {
@@ -108,8 +112,12 @@ class Parser {
 	Param*					GetParameter(vector<Lexer::Token*>& line, unsigned int);
 
 	Opcode					InstructionOpcodeWithString(string&);
-	FV1::MemoryPosition		DirectionSpecificationWithType(Lexer::TOKEN_TYPE&);
+	MemoryPosition			DirectionSpecificationWithType(Lexer::TOKEN_TYPE&);
 	Opcode					opcodeWithSecondaryOpcode(Opcode opcode, string subOpcode);
+	int						getChoFlagWithString(string id);
+	int						getChoFlagsValueWithLine(vector<Lexer::Token*>& line);
+
+	BOOL					isChoFlag(string id);
 
 	FV1* fv1;
 

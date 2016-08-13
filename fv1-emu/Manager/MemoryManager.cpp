@@ -30,19 +30,14 @@ double MemoryManager::getValueAtStart(MemoryAddress* mem) {
 	return mem->mem->start_ptr[index];
 }
 
-// if the size is odd, returns the middle point of the buffer
-// if the size is even, returns integer value of middle point
-//double MemoryManager::getValueAtMiddle(Memory* mem) {
-//	unsigned int head = mem->head_index;
-//	unsigned int tail = mem->tail_index;
-//	if (tail > head) {
-//		unsigned int middle = (tail + head) / 2;
-//		return middle;
-//	}
-//	else if (tail < head) {
-//
-//	}
-//}
+double MemoryManager::getValueAtMiddle(MemoryAddress* mem) {
+	unsigned int start_pointer = mem->mem->head_index;
+	unsigned int mem_size = mem->mem->size;
+	unsigned int mid_point = mem_size / 2; //(middle point: (0 + size) / 2)
+	unsigned int index = start_pointer + mid_point + mem->displacement + mem->lfoDisplacement;
+	index = index % mem_size;
+	return mem->mem->start_ptr[index];
+}
 
 void MemoryManager::setValueAtStart(Memory* mem, double value) {
 	mem->start_ptr[mem->head_index] = value;

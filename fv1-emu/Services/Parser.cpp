@@ -51,7 +51,6 @@ ExecutionVectorResult Parser::beginLexicalAnalysis(LPVOID lpBuffer, DWORD size) 
 BOOL Parser::PassOneParse(vector<vector<Lexer::Token*>> lines) {
 	BOOL success = false;
 
-
 	for (vector<vector<Lexer::Token*>>::iterator it = lines.begin(); it != lines.end(); it++) {
 		vector<Lexer::Token*> v = (*it);
 		if (v.size() == 3) {
@@ -180,7 +179,7 @@ vector<Param*> Parser::GetParameters(vector<Lexer::Token*> line, unsigned int cu
 
 Param* Parser::GetParameter(vector<Lexer::Token*>& line, unsigned int currentInstruction) {
 	if (line.size() > 0) {
-		FV1::MemoryPosition position = FV1::Start;
+		MemoryPosition position = Start;
 		bool negative = false;
 		Param* arg0 = new Param();
 		
@@ -204,7 +203,6 @@ Param* Parser::GetParameter(vector<Lexer::Token*>& line, unsigned int currentIns
 					line.erase(line.begin());
 				}
 			}
-			arg0->dir = position;
 
 			arg0->regAddress = fv1->getAddressOfIdentifier(arg0->value);
 			if (arg0->regAddress == NULL) {
@@ -218,8 +216,10 @@ Param* Parser::GetParameter(vector<Lexer::Token*>& line, unsigned int currentIns
 			if (it != memMap.end()) {
 				MemoryAddress* memAddress = new MemoryAddress();
 				memAddress->mem = (*it).second;
+				memAddress->position = position;
+
 				// memory address found, look for any modifier to the memory address
-				if (line.size() > 3 && (line[0]->type == Lexer::TOKEN_TYPE::PLUS || line[0]->type == Lexer::TOKEN_TYPE::MINUS)) {
+				if (line.size() > 1 && (line[0]->type == Lexer::TOKEN_TYPE::PLUS || line[0]->type == Lexer::TOKEN_TYPE::MINUS)) {
 					// there is a displacement here
 					bool negative = false;
 					if (line[0]->type == Lexer::TOKEN_TYPE::MINUS) {
@@ -260,7 +260,18 @@ Param* Parser::GetParameter(vector<Lexer::Token*>& line, unsigned int currentIns
 				unsigned int labelAddress = (*it2).second;
 				arg0->doubleValue = labelAddress - currentInstruction;
 			}
-
+			
+			// if the identifier is a CHO flag, then save all flags in this parameter
+			if (isChoFlag(arg0->value)) {
+				arg0->type = Lexer::TOKEN_TYPE::NUMBER;
+				arg0->choFlags = getChoFlagWithString(arg0->value);
+				if (line.size() > 0) {
+					if (line[0]->type == Lexer::TOKEN_TYPE::VERTICAL_BAR) {
+						line.erase(line.begin()); // erase vertical bar
+						arg0->choFlags |= getChoFlagsValueWithLine(line);
+					}
+				}
+			}
 		}
 		else if (line[0]->type == Lexer::TOKEN_TYPE::NUMBER) {
 			arg0->type = line[0]->type;
@@ -280,14 +291,14 @@ Param* Parser::GetParameter(vector<Lexer::Token*>& line, unsigned int currentIns
 	return NULL;
 }
 
-FV1::MemoryPosition Parser::DirectionSpecificationWithType(Lexer::TOKEN_TYPE& type) {
+MemoryPosition Parser::DirectionSpecificationWithType(Lexer::TOKEN_TYPE& type) {
 	switch (type) {
 	case Lexer::TOKEN_TYPE::CIRCUMFLEX:
-		return FV1::Middle;
+		return Middle;
 	case Lexer::TOKEN_TYPE::NUMERAL:
-		return FV1::End;
+		return End;
 	default:
-		return FV1::Start;
+		return Start;
 	}
 }
 
@@ -434,4 +445,67 @@ Opcode Parser::opcodeWithSecondaryOpcode(Opcode opcode, string subOpcode) {
 
 	assert(false); // invalid arguments
 	
+}
+
+BOOL Parser::isChoFlag(string id) {
+	return getChoFlagWithString(id) != CHOFlags::UNKNOWN_CHO_FLAG;
+}
+
+int Parser::getChoFlagWithString(string id) {
+	const char* str = id.c_str();
+	if (_stricmp(str, "sin") == 0) {
+		return CHOFlags::SIN;
+	}
+	else if (_stricmp(str, "cos") == 0) {
+		return CHOFlags::COS;
+	} 
+	else if (_stricmp(str, "compa") == 0) {
+		return CHOFlags::COMPA;
+	}
+	else if (_stricmp(str, "compc") == 0) {
+		return CHOFlags::COMPC;
+	}
+	else if (_stricmp(str, "reg") == 0) {
+		return CHOFlags::REG;
+	}
+	else if (_stricmp(str, "na") == 0) {
+		return CHOFlags::NA;
+	}
+	else if (_stricmp(str, "rptr2") == 0) {
+		return CHOFlags::RPTR2;
+	}
+
+	return CHOFlags::UNKNOWN_CHO_FLAG;
+}
+
+int	Parser::getChoFlagsValueWithLine(vector<Lexer::Token*>& line) {
+	int choFlags = CHOFlags::UNKNOWN_CHO_FLAG;
+	if (line.size() > 0) {
+		if (line[0]->type == Lexer::TOKEN_TYPE::IDENTIFIER) {
+			string value = line[0]->name;
+			if (isChoFlag(value)) {
+				choFlags = getChoFlagWithString(value);
+				line.erase(line.begin() + 0); // remove flag from line
+
+				// look ahead for a vertical bar
+				if (line.size() > 0) {
+					if (line[0]->type == Lexer::TOKEN_TYPE::VERTICAL_BAR) {
+						line.erase(line.begin() + 0); // remove vertical bar
+						choFlags |= getChoFlagsValueWithLine(line);
+					}
+				}
+			}
+			else {
+				assert(false); // cho flag expected;
+			}
+		}
+		else {
+			assert(false); // identifier expected
+		}
+	}
+	else {
+		// no error, finalized parse of flags.
+	}
+
+	return choFlags;
 }

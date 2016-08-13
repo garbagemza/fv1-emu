@@ -2,8 +2,25 @@
 #include <string>
 using namespace std;
 
+#define FV1_SAMPLE_RATE 32768
+
 struct Memory;
 struct MemoryAddress;
+struct Timer;
+
+// flags used for CHO opcode
+struct CHOFlags {
+
+	static const int UNKNOWN_CHO_FLAG = -1;
+
+	static const int SIN = 0;			// $0 Select SIN output(default) (Sine LFO only)
+	static const int COS = 1;			// Select COS output(Sine LFO only)
+	static const int REG = 1 << 1;		// Save the output of the LFO into an internal LFO register.
+	static const int COMPC = 1 << 2;	// Complement the coefficient(1-coeff)
+	static const int COMPA = 1 << 3;	// Complement the address offset from the LFO
+	static const int RPTR2 = 1 << 4;	// Select the ramp + 1 / 2 pointer(Ramp LFO only)
+	static const int NA = 1 << 5;		// Select xfade coefficient and do not add address offset
+};
 
 class FV1 {
 public:
@@ -16,15 +33,11 @@ public:
 		NEG
 	};
 
-	enum MemoryPosition {
-		Start,
-		Middle,
-		End
-	};
-
-	enum SineOscillator {
+	enum LFOType {
 		SIN0,
-		SIN1
+		SIN1,
+		RMP0,
+		RMP1
 	};
 
 	enum Register {
@@ -129,10 +142,9 @@ public:
 	unsigned int sin0_range = 0;
 	unsigned int sin1_range = 0;
 
-
 	void mem(Memory** addr, unsigned int size);
 	void rdax(double regValue, double coefficient);
-	void rda(MemoryAddress* mem, MemoryPosition pos, double coefficient);
+	void rda(MemoryAddress* mem, double coefficient);
 
 	void wrap(Memory* mem, double coefficient);
 	void wrax(double* value_addr, double coefficient);
@@ -147,7 +159,8 @@ public:
 	void absa();
 	void wrlx(double* reg_addr, double coefficient);
 	void wrhx(double* reg_addr, double coefficient);
-	void wlds(SineOscillator osc, unsigned int frequencyCoefficient, unsigned int amplitudeCoefficient);
+	void wlds(LFOType osc, unsigned int frequencyCoefficient, unsigned int amplitudeCoefficient);
+	void cho_rda(Timer* timer, LFOType osc, int choFlags, MemoryAddress* memAddress);
 
 	// used for conditions
 	bool zrc();
@@ -157,9 +170,11 @@ public:
 
 	// misc
 	void updm(Memory* mem);
+	int displacementWithLFO(Timer* timer, int flags, double rate, unsigned int amplitude);
+
 	double* getAddressOfIdentifier(string id);
 	SkipCondition conditionWithIdentifier(string id);
-	SineOscillator oscillatorWithIdentifier(string id);
+	LFOType oscillatorWithIdentifier(string id);
 	double* getRegisterAddressWithName(string name);
 	
 };

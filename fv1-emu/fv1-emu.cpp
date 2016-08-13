@@ -45,6 +45,7 @@ class SpinSoundDelegate : public ISoundDelegate {
 	SpinFile* spinFile = 0;
 
 	Timer* timer = 0;
+	Timer* fv1Timer = 0;
 
 	unsigned int memCount = 0;
 	Memory* memoryArray[128];
@@ -268,7 +269,8 @@ void SpinSoundDelegate::willBeginPlay() {
 
 	generator = SoundUtilities::createSignalGenerator(SignalType::Sinusoidal, 200.0);
 	timer = TimerManager::createTimer(44100);
-	
+	fv1Timer = TimerManager::createTimer(FV1_SAMPLE_RATE);
+
 	if (this->spinFile != NULL) {
 		// load first pass
 		map<string, Memory*> memories = spinFile->memMap;
@@ -297,6 +299,9 @@ void SpinSoundDelegate::getAudioChunk(LPVOID buffer, DWORD sampleCount, DWORD &d
 
 	for (unsigned int i = 0; i < sampleCount; i++) {
 		TimerManager::updateTimerWithSampleNumber(timer, i);
+
+		// updates t based on main sample rate frequency.
+		TimerManager::updateTimerWithTimer(fv1Timer, timer);
 
 		fv1->adcl = 0.5 * SoundUtilities::sampleWithTime(generator, timer);
 		fv1->adcr = fv1->adcl;
@@ -353,7 +358,7 @@ BOOL SpinSoundDelegate::ExecuteInstruction(Instruction* inst, unsigned int index
 	break;
 	case RDA:
 	{
-		fv1->rda(inst->args[0]->memAddress, inst->args[0]->dir, inst->args[1]->doubleValue);
+		fv1->rda(inst->args[0]->memAddress, inst->args[1]->doubleValue);
 		return true;
 	}
 	break;
@@ -464,8 +469,17 @@ BOOL SpinSoundDelegate::ExecuteInstruction(Instruction* inst, unsigned int index
 	break;
 	case WLDS:
 	{
-		FV1::SineOscillator osc = inst->args[0]->osc;
+		FV1::LFOType osc = inst->args[0]->osc;
 		fv1->wlds(osc, inst->args[1]->doubleValue, inst->args[2]->doubleValue);
+		return true;
+	}
+	case CHO_RDA:
+	{
+		FV1::LFOType osc = inst->args[0]->osc;
+		int choFlags = inst->args[1]->choFlags;
+		MemoryAddress* memAddress = inst->args[2]->memAddress;
+		fv1->cho_rda(fv1Timer, osc, choFlags, memAddress);
+
 		return true;
 	}
 	}

@@ -17,3 +17,9 @@ void TimerManager::updateTimerWithSampleNumber(Timer* timer, unsigned int sample
 	timer->sample = sampleNumber;
 	timer->t = (double)sampleNumber / (double)timer->samplesPerSecond;
 }
+
+// this is intended for synchronization of two different sample rate timers
+void TimerManager::updateTimerWithTimer(Timer* timer, Timer* withTimer) {
+	timer->sample = withTimer->sample;
+	timer->t = withTimer->t * (double)timer->samplesPerSecond / (double)withTimer->samplesPerSecond;
+}

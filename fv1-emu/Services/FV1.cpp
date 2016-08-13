@@ -1,15 +1,15 @@
 #include "stdafx.h"
 #include "FV1.h"
 #include "..\Manager\MemoryManager.h"
+#include "..\Manager\TimerManager.h"
 #include "..\Utilities\MathUtils.h"
+#include "..\Utilities\SoundUtilities.h"
 
 #include <cassert>
 
 #define _USE_MATH_DEFINES
 #include <math.h>
 
-
-#define FV1_SAMPLE_RATE 32768
 
 void FV1::mem(Memory** memory, unsigned int size) {
 	*memory = MemoryManager::createMemory(size);
@@ -23,15 +23,14 @@ void FV1::rdax(double regValue, double coefficient) {
 }
 
 // since the memory is read from the end, we switch read algorithm
-void FV1::rda(MemoryAddress* mem, MemoryPosition pos, double coefficient) {
+void FV1::rda(MemoryAddress* mem, double coefficient) {
 	double tmp = 0;
-	switch (pos) {
+	switch (mem->position) {
 	case Start:
 		tmp = MemoryManager::getValueAtEnd(mem);
 		break;
 	case Middle:
-		//tmp = MemoryManager::getValueAtMiddle(mem);
-		assert(false); // not implemented yet
+		tmp = MemoryManager::getValueAtMiddle(mem);
 		break;
 	case End:
 		tmp = MemoryManager::getValueAtStart(mem);
@@ -127,17 +126,48 @@ void FV1::wrhx(double* reg_addr, double coefficient) {
 	acc = tmpAcc;
 }
 
-void FV1::wlds(SineOscillator osc, unsigned int Kf, unsigned int Ka) {
+void FV1::wlds(LFOType osc, unsigned int Kf, unsigned int Ka) {
 	switch (osc) {
 	case SIN0:
 		sin0_rate = (double)Kf * (double)FV1_SAMPLE_RATE / (131072.0 * 2.0 * M_PI);
-		sin0_range = (unsigned int)(floor((double)Ka * 16385.0 / 32767.0 + 0.5));
+		sin0_range = (unsigned int)(floor((double)Ka * 16385.0 / 32767.0));
+
 		break;
 	case SIN1:
 		sin1_rate = (double)Kf * (double)FV1_SAMPLE_RATE / (131072.0 * 2.0 * M_PI);
-		sin1_range = (unsigned int)(floor((double)Ka * 16385.0 / 32767.0 + 0.5));
+		sin1_range = (unsigned int)(floor((double)Ka * 16385.0 / 32767.0));
 		break;
+	default:
+		assert(false); // invalid LFO type
 	}
+}
+
+// for now the coefficient will be 0.5, in the original chip the 
+// interpolation coefficient is taken from the calculation of the
+// sine/cosine.
+void FV1::cho_rda(Timer* timer, LFOType osc, int choFlags, MemoryAddress* memAddress) {
+
+	double rate = 0.0;
+	unsigned int amplitude = 0;
+
+	if (osc == SIN0) {
+		rate = sin0_rate;
+		amplitude = sin0_range / 2;
+	}
+	else if (osc == SIN1) {
+		rate = sin1_rate;
+		amplitude = sin1_range / 2;
+	}
+	else if (osc == RMP0) {
+		assert(false);// not implemented yet
+	}
+	else if (osc == RMP1) {
+		assert(false);// not implemented yet
+	}
+
+	memAddress->lfoDisplacement = displacementWithLFO(timer, choFlags, rate, amplitude);
+
+	rda(memAddress, 0.5);
 }
 
 bool FV1::zrc() {
@@ -162,6 +192,7 @@ bool FV1::neg() {
 void FV1::updm(Memory* mem) {
 	MemoryManager::updateMemoryPointersIncrementingByOne(mem);
 }
+
 
 double* FV1::getAddressOfIdentifier(string id) {
 	if (_stricmp(id.c_str(), "adcl") == 0) {
@@ -305,14 +336,42 @@ FV1::SkipCondition FV1::conditionWithIdentifier(string id) {
 	return FV1::UNKNOWN;
 }
 
-FV1::SineOscillator FV1::oscillatorWithIdentifier(string id) {
-	if (_stricmp(id.c_str(), "sin0") == 0) {
+FV1::LFOType FV1::oscillatorWithIdentifier(string id) {
+	const char* str = id.c_str();
+	if (_stricmp(str, "sin0") == 0) {
 		return FV1::SIN0;
 	}
-	else if (_stricmp(id.c_str() , "sin1") == 0) {
+	else if (_stricmp(str, "sin1") == 0) {
 		return FV1::SIN1;
+	}
+	else if (_stricmp(str, "rmp0") == 0) {
+		return FV1::RMP0;
+	}
+	else if (_stricmp(str, "rmp1") == 0) {
+		return FV1::RMP1;
 	}
 
 	// default
 	return FV1::SIN0;
+}
+
+// use sin oscillator as default, this changes if COS is included in flags.
+int FV1::displacementWithLFO(Timer* timer, int choFlags, double rate, unsigned int amplitude) {
+	bool useCosineInsteadSin = false;
+	bool saveToRegister = false;
+
+	if (choFlags & CHOFlags::COS) {
+		useCosineInsteadSin = true;
+	}
+
+	if (choFlags & CHOFlags::REG) {
+		saveToRegister = true;
+	}
+
+	double w = 2.0 * M_PI * rate;
+	//double period = 1.0 / rate;
+
+	double sincos = useCosineInsteadSin ? cos(w * timer->t) : sin(w * timer->t);
+	int displacement = (int)(floor(sincos * (double)amplitude));
+	return displacement;
 }
