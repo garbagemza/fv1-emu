@@ -139,8 +139,8 @@ public:
 	double sin0_rate = 0.0;
 	double sin1_rate = 0.0;
 
-	unsigned int sin0_range = 0;
-	unsigned int sin1_range = 0;
+	double sin0_range = 0;
+	double sin1_range = 0;
 
 	void mem(Memory** addr, unsigned int size);
 	void rdax(double regValue, double coefficient);
@@ -159,10 +159,10 @@ public:
 	void absa();
 	void wrlx(double* reg_addr, double coefficient);
 	void wrhx(double* reg_addr, double coefficient);
-	void wlds(LFOType osc, unsigned int frequencyCoefficient, unsigned int amplitudeCoefficient);
+	void wlds(LFOType osc, double frequencyCoefficient, double amplitudeCoefficient);
 	void cho_rda(Timer* timer, LFOType osc, unsigned int choFlags, MemoryAddress* memAddress);
 
-	// used for conditions
+	// used for skip conditions
 	bool zrc();
 	bool zro();
 	bool gez();
@@ -170,7 +170,7 @@ public:
 
 	// misc
 	void updm(Memory* mem);
-	int displacementWithLFO(Timer* timer, int flags, double rate, unsigned int amplitude);
+	int displacementWithLFO(Timer* timer, int flags, double rate, double amplitude);
 
 	double* getAddressOfIdentifier(string id);
 	SkipCondition conditionWithIdentifier(string id);

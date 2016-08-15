@@ -204,7 +204,7 @@ Lexer::Token* Lexer::process_number() {
 	pos++;
 	while (pos < buflen) {
 		char c = ((char*)lpBuffer)[pos];
-		bool isValidNumber = c == '.' || c == 'x' || c == 'X' || isdigit(c);
+		bool isValidNumber = c == '.' || c == 'x' || c == 'X' || isdigit(c) || isHexDigit(c);
 		if (!isValidNumber) {
 			break;
 		}
@@ -213,4 +213,14 @@ Lexer::Token* Lexer::process_number() {
 	}
 	tok->pos = pos;
 	return tok;
+}
+
+bool Lexer::isHexDigit(char c) {
+
+	return c == 'a' || c == 'A'
+		|| c == 'b' || c == 'B'
+		|| c == 'c' || c == 'C'
+		|| c == 'd' || c == 'D'
+		|| c == 'e' || c == 'E'
+		|| c == 'f' || c == 'F';
 }

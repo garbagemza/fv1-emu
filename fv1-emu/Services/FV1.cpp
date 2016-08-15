@@ -126,16 +126,16 @@ void FV1::wrhx(double* reg_addr, double coefficient) {
 	acc = tmpAcc;
 }
 
-void FV1::wlds(LFOType osc, unsigned int Kf, unsigned int Ka) {
+void FV1::wlds(LFOType osc, double Kf, double Ka) {
 	switch (osc) {
 	case SIN0:
-		sin0_rate = (double)Kf * (double)FV1_SAMPLE_RATE / (131072.0 * 2.0 * M_PI);
-		sin0_range = (unsigned int)(floor((double)Ka * 16385.0 / 32767.0));
+		sin0_rate = Kf * (double)FV1_SAMPLE_RATE / (131072.0 * 2.0 * M_PI);
+		sin0_range = floor(Ka * 16385.0 / 32767.0);
 
 		break;
 	case SIN1:
-		sin1_rate = (double)Kf * (double)FV1_SAMPLE_RATE / (131072.0 * 2.0 * M_PI);
-		sin1_range = (unsigned int)(floor((double)Ka * 16385.0 / 32767.0));
+		sin1_rate = Kf * (double)FV1_SAMPLE_RATE / (131072.0 * 2.0 * M_PI);
+		sin1_range = floor(Ka * 16385.0 / 32767.0);
 		break;
 	default:
 		assert(false); // invalid LFO type
@@ -148,15 +148,15 @@ void FV1::wlds(LFOType osc, unsigned int Kf, unsigned int Ka) {
 void FV1::cho_rda(Timer* timer, LFOType osc, unsigned int choFlags, MemoryAddress* memAddress) {
 
 	double rate = 0.0;
-	unsigned int amplitude = 0;
+	double amplitude = 0;
 
 	if (osc == SIN0) {
 		rate = sin0_rate;
-		amplitude = sin0_range / 2;
+		amplitude = sin0_range / 2.0;
 	}
 	else if (osc == SIN1) {
 		rate = sin1_rate;
-		amplitude = sin1_range / 2;
+		amplitude = sin1_range / 2.0;
 	}
 	else if (osc == RMP0) {
 		assert(false);// not implemented yet
@@ -195,121 +195,135 @@ void FV1::updm(Memory* mem) {
 
 
 double* FV1::getAddressOfIdentifier(string id) {
-	if (_stricmp(id.c_str(), "adcl") == 0) {
+	const char * str = id.c_str();
+
+	if (_stricmp(str, "adcl") == 0) {
 		return &adcl;
 	}
-	else if (_stricmp(id.c_str(), "adcr") == 0) {
+	else if (_stricmp(str, "adcr") == 0) {
 		return &adcr;
 	}
-	else if (_stricmp(id.c_str(), "dacl") == 0) {
+	else if (_stricmp(str, "dacl") == 0) {
 		return &dacl;
 	}
-	else if (_stricmp(id.c_str(), "dacr") == 0) {
+	else if (_stricmp(str, "dacr") == 0) {
 		return &dacr;
 	}
-	else if (_stricmp(id.c_str(), "pot0") == 0) {
+	else if (_stricmp(str, "pot0") == 0) {
 		return &pot0;
 	}
-	else if (_stricmp(id.c_str(), "pot1") == 0) {
+	else if (_stricmp(str, "pot1") == 0) {
 		return &pot1;
 	}
-	else if (_stricmp(id.c_str(), "pot2") == 0) {
+	else if (_stricmp(str, "pot2") == 0) {
 		return &pot2;
 	}
-	else if (_stricmp(id.c_str(), "reg0") == 0) {
+	else if (_stricmp(str, "sin0_rate") == 0) {
+		return &sin0_rate;
+	}
+	else if (_stricmp(str, "sin0_range") == 0) {
+		return &sin0_range;
+	}
+	else if (_stricmp(str, "sin1_rate") == 0) {
+		return &sin1_rate;
+	}
+	else if (_stricmp(str, "sin1_range") == 0) {
+		return &sin1_range;
+	}
+	else if (_stricmp(str, "reg0") == 0) {
 		return &reg0;
 	}
-	else if (_stricmp(id.c_str(), "reg1") == 0) {
+	else if (_stricmp(str, "reg1") == 0) {
 		return &reg1;
 	}
-	else if (_stricmp(id.c_str(), "reg2") == 0) {
+	else if (_stricmp(str, "reg2") == 0) {
 		return &reg2;
 	}
-	else if (_stricmp(id.c_str(), "reg3") == 0) {
+	else if (_stricmp(str, "reg3") == 0) {
 		return &reg3;
 	}
-	else if (_stricmp(id.c_str(), "reg4") == 0) {
+	else if (_stricmp(str, "reg4") == 0) {
 		return &reg4;
 	}
-	else if (_stricmp(id.c_str(), "reg5") == 0) {
+	else if (_stricmp(str, "reg5") == 0) {
 		return &reg5;
 	}
-	else if (_stricmp(id.c_str(), "reg6") == 0) {
+	else if (_stricmp(str, "reg6") == 0) {
 		return &reg6;
 	}
-	else if (_stricmp(id.c_str(), "reg7") == 0) {
+	else if (_stricmp(str, "reg7") == 0) {
 		return &reg7;
 	}
-	else if (_stricmp(id.c_str(), "reg8") == 0) {
+	else if (_stricmp(str, "reg8") == 0) {
 		return &reg8;
 	}
-	else if (_stricmp(id.c_str(), "reg9") == 0) {
+	else if (_stricmp(str, "reg9") == 0) {
 		return &reg9;
 	}
-	else if (_stricmp(id.c_str(), "reg10") == 0) {
+	else if (_stricmp(str, "reg10") == 0) {
 		return &reg10;
 	}
-	else if (_stricmp(id.c_str(), "reg11") == 0) {
+	else if (_stricmp(str, "reg11") == 0) {
 		return &reg11;
 	}
-	else if (_stricmp(id.c_str(), "reg12") == 0) {
+	else if (_stricmp(str, "reg12") == 0) {
 		return &reg12;
 	}
-	else if (_stricmp(id.c_str(), "reg13") == 0) {
+	else if (_stricmp(str, "reg13") == 0) {
 		return &reg13;
 	}
-	else if (_stricmp(id.c_str(), "reg14") == 0) {
+	else if (_stricmp(str, "reg14") == 0) {
 		return &reg14;
 	}
-	else if (_stricmp(id.c_str(), "reg15") == 0) {
+	else if (_stricmp(str, "reg15") == 0) {
 		return &reg15;
 	}
-	else if (_stricmp(id.c_str(), "reg16") == 0) {
+	else if (_stricmp(str, "reg16") == 0) {
 		return &reg16;
 	}
-	else if (_stricmp(id.c_str(), "reg17") == 0) {
+	else if (_stricmp(str, "reg17") == 0) {
 		return &reg17;
 	}
-	else if (_stricmp(id.c_str(), "reg18") == 0) {
+	else if (_stricmp(str, "reg18") == 0) {
 		return &reg18;
 	}
-	else if (_stricmp(id.c_str(), "reg19") == 0) {
+	else if (_stricmp(str, "reg19") == 0) {
 		return &reg19;
 	}
-	else if (_stricmp(id.c_str(), "reg20") == 0) {
+	else if (_stricmp(str, "reg20") == 0) {
 		return &reg20;
 	}
-	else if (_stricmp(id.c_str(), "reg21") == 0) {
+	else if (_stricmp(str, "reg21") == 0) {
 		return &reg21;
 	}
-	else if (_stricmp(id.c_str(), "reg22") == 0) {
+	else if (_stricmp(str, "reg22") == 0) {
 		return &reg22;
 	}
-	else if (_stricmp(id.c_str(), "reg23") == 0) {
+	else if (_stricmp(str, "reg23") == 0) {
 		return &reg23;
 	}
-	else if (_stricmp(id.c_str(), "reg24") == 0) {
+	else if (_stricmp(str, "reg24") == 0) {
 		return &reg24;
 	}
-	else if (_stricmp(id.c_str(), "reg25") == 0) {
+	else if (_stricmp(str, "reg25") == 0) {
 		return &reg25;
 	}
-	else if (_stricmp(id.c_str(), "reg26") == 0) {
+	else if (_stricmp(str, "reg26") == 0) {
 		return &reg26;
 	}
-	else if (_stricmp(id.c_str(), "reg27") == 0) {
+	else if (_stricmp(str, "reg27") == 0) {
 		return &reg27;
 	}
-	else if (_stricmp(id.c_str(), "reg28") == 0) {
+	else if (_stricmp(str, "reg28") == 0) {
 		return &reg28;
 	}
-	else if (_stricmp(id.c_str(), "reg29") == 0) {
+	else if (_stricmp(str, "reg29") == 0) {
 		return &reg29;
 	}
-	else if (_stricmp(id.c_str(), "reg30") == 0) {
+	else if (_stricmp(str, "reg30") == 0) {
 		return &reg30;
 	}
-	else if (_stricmp(id.c_str(), "reg31") == 0) {
+	else if (_stricmp(str, "reg31") == 0) {
 		return &reg31;
 	}
 
@@ -355,8 +369,8 @@ FV1::LFOType FV1::oscillatorWithIdentifier(string id) {
 	return FV1::SIN0;
 }
 
-// use sin oscillator as default, this changes if COS is included in flags.
-int FV1::displacementWithLFO(Timer* timer, int choFlags, double rate, unsigned int amplitude) {
+// use SIN oscillator as default, this changes if COS is included in flags.
+int FV1::displacementWithLFO(Timer* timer, int choFlags, double rate, double amplitude) {
 	bool useCosineInsteadSin = false;
 	bool saveToRegister = false;
 
@@ -369,9 +383,8 @@ int FV1::displacementWithLFO(Timer* timer, int choFlags, double rate, unsigned i
 	}
 
 	double w = 2.0 * M_PI * rate;
-	//double period = 1.0 / rate;
 
 	double sincos = useCosineInsteadSin ? cos(w * timer->t) : sin(w * timer->t);
-	int displacement = (int)(floor(sincos * (double)amplitude));
+	int displacement = (int)(floor(sincos * amplitude));
 	return displacement;
 }
