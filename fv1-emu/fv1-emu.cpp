@@ -476,7 +476,7 @@ BOOL SpinSoundDelegate::ExecuteInstruction(Instruction* inst, unsigned int index
 	case CHO_RDA:
 	{
 		FV1::LFOType osc = inst->args[0]->osc;
-		int choFlags = inst->args[1]->choFlags;
+		unsigned int choFlags = inst->args[1]->unsignedIntValue;
 		MemoryAddress* memAddress = inst->args[2]->memAddress;
 		fv1->cho_rda(fv1Timer, osc, choFlags, memAddress);
 

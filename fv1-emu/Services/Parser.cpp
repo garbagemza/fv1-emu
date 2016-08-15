@@ -264,11 +264,11 @@ Param* Parser::GetParameter(vector<Lexer::Token*>& line, unsigned int currentIns
 			// if the identifier is a CHO flag, then save all flags in this parameter
 			if (isChoFlag(arg0->value)) {
 				arg0->type = Lexer::TOKEN_TYPE::NUMBER;
-				arg0->choFlags = getChoFlagWithString(arg0->value);
+				arg0->unsignedIntValue = getChoFlagWithString(arg0->value);
 				if (line.size() > 0) {
 					if (line[0]->type == Lexer::TOKEN_TYPE::VERTICAL_BAR) {
 						line.erase(line.begin()); // erase vertical bar
-						arg0->choFlags |= getChoFlagsValueWithLine(line);
+						arg0->unsignedIntValue |= getChoFlagsValueWithLine(line);
 					}
 				}
 			}
@@ -276,10 +276,20 @@ Param* Parser::GetParameter(vector<Lexer::Token*>& line, unsigned int currentIns
 		else if (line[0]->type == Lexer::TOKEN_TYPE::NUMBER) {
 			arg0->type = line[0]->type;
 			arg0->value = line[0]->name;
-			double coefficient = 0;
-			STR2NUMBER_ERROR err = str2dble(coefficient, line[0]->name.c_str());
-			if (err == SUCCESS) {
-				arg0->doubleValue = negative ? coefficient * -1.0 : coefficient;
+			if (isHexValue(arg0->value)) {
+				unsigned int hexValue = 0;
+				STR2NUMBER_ERROR err = hexstr2uint(hexValue, arg0->value.c_str());
+				if (err == SUCCESS) {
+					arg0->unsignedIntValue = hexValue;
+				}
+			}
+			else {
+				// attempt to read it as double value
+				double coefficient = 0;
+				STR2NUMBER_ERROR err = str2dble(coefficient, line[0]->name.c_str());
+				if (err == SUCCESS) {
+					arg0->doubleValue = negative ? coefficient * -1.0 : coefficient;
+				}
 			}
 			line.erase(line.begin()); // erase number
 		}
@@ -451,7 +461,7 @@ BOOL Parser::isChoFlag(string id) {
 	return getChoFlagWithString(id) != CHOFlags::UNKNOWN_CHO_FLAG;
 }
 
-int Parser::getChoFlagWithString(string id) {
+unsigned int Parser::getChoFlagWithString(string id) {
 	const char* str = id.c_str();
 	if (_stricmp(str, "sin") == 0) {
 		return CHOFlags::SIN;
@@ -478,8 +488,8 @@ int Parser::getChoFlagWithString(string id) {
 	return CHOFlags::UNKNOWN_CHO_FLAG;
 }
 
-int	Parser::getChoFlagsValueWithLine(vector<Lexer::Token*>& line) {
-	int choFlags = CHOFlags::UNKNOWN_CHO_FLAG;
+unsigned int	Parser::getChoFlagsValueWithLine(vector<Lexer::Token*>& line) {
+	unsigned int choFlags = CHOFlags::UNKNOWN_CHO_FLAG;
 	if (line.size() > 0) {
 		if (line[0]->type == Lexer::TOKEN_TYPE::IDENTIFIER) {
 			string value = line[0]->name;
@@ -508,4 +518,15 @@ int	Parser::getChoFlagsValueWithLine(vector<Lexer::Token*>& line) {
 	}
 
 	return choFlags;
+}
+
+// value should start with 0 and x
+BOOL Parser::isHexValue(string value) {
+	if (value.size() > 2) {
+		if (value[0] == '0' && (value[1] == 'x' || value[1] == 'X')) {
+			return true;
+		}
+	}
+
+	return FALSE;
 }

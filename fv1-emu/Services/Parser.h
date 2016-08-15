@@ -17,7 +17,7 @@ struct Param
 	// used for skp instruction
 	FV1::SkipCondition condition;
 	FV1::LFOType osc;
-	int choFlags;
+	unsigned int unsignedIntValue;
 
 	Param() {
 		doubleValue = 0;
@@ -25,7 +25,7 @@ struct Param
 		memAddress = 0;
 		condition = FV1::UNKNOWN;
 		osc = FV1::SIN0;
-		choFlags = CHOFlags::UNKNOWN_CHO_FLAG;
+		unsignedIntValue = 0;
 	}
 };
 
@@ -114,10 +114,11 @@ class Parser {
 	Opcode					InstructionOpcodeWithString(string&);
 	MemoryPosition			DirectionSpecificationWithType(Lexer::TOKEN_TYPE&);
 	Opcode					opcodeWithSecondaryOpcode(Opcode opcode, string subOpcode);
-	int						getChoFlagWithString(string id);
-	int						getChoFlagsValueWithLine(vector<Lexer::Token*>& line);
+	unsigned int			getChoFlagWithString(string id);
+	unsigned int			getChoFlagsValueWithLine(vector<Lexer::Token*>& line);
 
 	BOOL					isChoFlag(string id);
+	BOOL					isHexValue(string id);
 
 	FV1* fv1;
 

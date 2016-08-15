@@ -145,7 +145,7 @@ void FV1::wlds(LFOType osc, unsigned int Kf, unsigned int Ka) {
 // for now the coefficient will be 0.5, in the original chip the 
 // interpolation coefficient is taken from the calculation of the
 // sine/cosine.
-void FV1::cho_rda(Timer* timer, LFOType osc, int choFlags, MemoryAddress* memAddress) {
+void FV1::cho_rda(Timer* timer, LFOType osc, unsigned int choFlags, MemoryAddress* memAddress) {
 
 	double rate = 0.0;
 	unsigned int amplitude = 0;

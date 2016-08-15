@@ -11,15 +11,15 @@ struct Timer;
 // flags used for CHO opcode
 struct CHOFlags {
 
-	static const int UNKNOWN_CHO_FLAG = -1;
+	static const unsigned int UNKNOWN_CHO_FLAG = -1;
 
-	static const int SIN = 0;			// $0 Select SIN output(default) (Sine LFO only)
-	static const int COS = 1;			// Select COS output(Sine LFO only)
-	static const int REG = 1 << 1;		// Save the output of the LFO into an internal LFO register.
-	static const int COMPC = 1 << 2;	// Complement the coefficient(1-coeff)
-	static const int COMPA = 1 << 3;	// Complement the address offset from the LFO
-	static const int RPTR2 = 1 << 4;	// Select the ramp + 1 / 2 pointer(Ramp LFO only)
-	static const int NA = 1 << 5;		// Select xfade coefficient and do not add address offset
+	static const unsigned int SIN = 0;			// $0 Select SIN output(default) (Sine LFO only)
+	static const unsigned int COS = 1;			// Select COS output(Sine LFO only)
+	static const unsigned int REG = 1 << 1;		// Save the output of the LFO into an internal LFO register.
+	static const unsigned int COMPC = 1 << 2;	// Complement the coefficient(1-coeff)
+	static const unsigned int COMPA = 1 << 3;	// Complement the address offset from the LFO
+	static const unsigned int RPTR2 = 1 << 4;	// Select the ramp + 1 / 2 pointer(Ramp LFO only)
+	static const unsigned int NA = 1 << 5;		// Select xfade coefficient and do not add address offset
 };
 
 class FV1 {
@@ -160,7 +160,7 @@ public:
 	void wrlx(double* reg_addr, double coefficient);
 	void wrhx(double* reg_addr, double coefficient);
 	void wlds(LFOType osc, unsigned int frequencyCoefficient, unsigned int amplitudeCoefficient);
-	void cho_rda(Timer* timer, LFOType osc, int choFlags, MemoryAddress* memAddress);
+	void cho_rda(Timer* timer, LFOType osc, unsigned int choFlags, MemoryAddress* memAddress);
 
 	// used for conditions
 	bool zrc();

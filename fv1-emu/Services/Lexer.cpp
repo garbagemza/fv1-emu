@@ -204,7 +204,8 @@ Lexer::Token* Lexer::process_number() {
 	pos++;
 	while (pos < buflen) {
 		char c = ((char*)lpBuffer)[pos];
-		if (c != '.' && !isdigit(c)) {
+		bool isValidNumber = c == '.' || c == 'x' || c == 'X' || isdigit(c);
+		if (!isValidNumber) {
 			break;
 		}
 		tok->name.push_back(c);

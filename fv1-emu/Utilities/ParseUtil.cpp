@@ -60,3 +60,23 @@ STR2NUMBER_ERROR str2dble(double& d, char const *s, int base) {
 	d = dbl;
 	return SUCCESS;
 }
+
+STR2NUMBER_ERROR hexstr2uint(unsigned int& value, const char *s) {
+	errno = 0;
+	char *end;
+
+	long int val = strtol(s, &end, 16);
+	if (errno == ERANGE && val == LONG_MAX) {
+		return OVERFLOW;
+	}
+	if (errno == ERANGE && val == LONG_MIN) {
+		return UNDERFLOW;
+	}
+
+	if (*s == '\0' || *end != '\0') {
+		return INCONVERTIBLE;
+	}
+
+	value = (unsigned int)val;
+	return SUCCESS;
+}
