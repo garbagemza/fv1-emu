@@ -15,15 +15,23 @@
 #include "Services\Parser.h"
 
 #include <commdlg.h>
+#include <Commctrl.h>
 #include <vector>
 #include <map>
 #include <ctime>
+#pragma comment(lib, "Comctl32.lib")
+
 using namespace std;
 
 #define MAX_LOADSTRING 100
 
 // Global Variables:
 HINSTANCE hInst;								// current instance
+
+HWND hwndPot0;									// pot handles
+HWND hwndPot1;
+HWND hwndPot2;
+
 TCHAR szTitle[MAX_LOADSTRING];					// The title bar text
 TCHAR szWindowClass[MAX_LOADSTRING];			// the main window class name
 
@@ -40,6 +48,7 @@ class SpinSoundDelegate : public ISoundDelegate {
 
 	BOOL ExecuteInstruction(Instruction* inst, unsigned int index, unsigned int& skipLines);
 	void UpdateDelayMemories();
+	double getPotValue(HWND hwndPot);
 
 	SignalGenerator* generator = 0;
 	SpinFile* spinFile = 0;
@@ -66,6 +75,7 @@ INT_PTR CALLBACK		About(HWND, UINT, WPARAM, LPARAM);
 VOID					PromptOpenFile();
 VOID					OpenFileForReadAndLoad(LPWSTR filename);
 VOID					LoadFile(HANDLE file, FV1*);
+HWND WINAPI				CreateTrackbar(HINSTANCE hInstance, HWND hwndDlg, UINT iMin, UINT iMax, UINT xOffset);
 
 int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -151,7 +161,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    hInst = hInstance; // Store instance handle in our global variable
 
    hWnd = CreateWindow(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-      CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, NULL, NULL, hInstance, NULL);
+      CW_USEDEFAULT, 0, 320, 480, NULL, NULL, hInstance, NULL);
 
    if (!hWnd)
    {
@@ -174,9 +184,12 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    }
 
    SCLog::mainInstance()->setupLogging();
-
    // initialize fv1
    fv1 = new FV1();
+
+   hwndPot0 = CreateTrackbar(hInst, hWnd, 0, 100, 100);
+   hwndPot1 = CreateTrackbar(hInst, hWnd, 0, 100, 140);
+   hwndPot2 = CreateTrackbar(hInst, hWnd, 0, 100, 180);
 
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
@@ -265,6 +278,49 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 	return (INT_PTR)FALSE;
 }
 
+HWND WINAPI CreateTrackbar(
+	HINSTANCE hInstance,
+	HWND hwndDlg,  // handle of dialog box (parent window) 
+	UINT iMin,     // minimum value in trackbar range 
+	UINT iMax,	   // maximum value in trackbar selection 
+	UINT xOffset)
+{
+
+	InitCommonControls(); // loads common control's DLL 
+
+	HWND hwndTrack = CreateWindowEx(
+		0,                               // no extended styles 
+		TRACKBAR_CLASS,                  // class name 
+		L"Trackbar Control",              // title (caption) 
+		WS_CHILD |
+		WS_VISIBLE |
+		TBS_NOTICKS | TBS_VERT,					// style 
+		xOffset, 100,                    // position 
+		30, 200,                         // size 
+		hwndDlg,                         // parent window 
+		NULL,                     // control identifier 
+		hInstance,                         // instance 
+		NULL                             // no WM_CREATE parameter 
+		);
+
+	SendMessage(hwndTrack, TBM_SETRANGE,
+		(WPARAM)TRUE,                   // redraw flag 
+		(LPARAM)MAKELONG(iMin, iMax));  // min. & max. positions
+
+	SendMessage(hwndTrack, TBM_SETPAGESIZE,
+		0, (LPARAM)4);                  // new page size 
+
+
+	SendMessage(hwndTrack, TBM_SETPOS,
+		(WPARAM)TRUE,                   // redraw flag 
+		(LPARAM)(iMin + iMax) / 2);
+
+	//SetFocus(hwndTrack);
+
+	return hwndTrack;
+}
+
+
 void SpinSoundDelegate::willBeginPlay() {
 
 	generator = SoundUtilities::createSignalGenerator(SignalType::Sinusoidal, 200.0);
@@ -302,6 +358,16 @@ void SpinSoundDelegate::getAudioChunk(LPVOID buffer, DWORD sampleCount, DWORD &d
 
 		// updates t based on main sample rate frequency.
 		TimerManager::updateTimerWithTimer(fv1Timer, timer);
+
+		// set up potentiometers
+		double pot0Value = getPotValue(hwndPot0);
+		double pot1Value = getPotValue(hwndPot1);
+		double pot2Value = getPotValue(hwndPot2);
+
+		fv1->pot0 = pot0Value;
+		fv1->pot1 = pot1Value;
+		fv1->pot2 = pot2Value;
+
 
 		fv1->adcl = 0.5 * SoundUtilities::sampleWithTime(generator, timer);
 		fv1->adcr = fv1->adcl;
@@ -344,6 +410,14 @@ void SpinSoundDelegate::getAudioChunk(LPVOID buffer, DWORD sampleCount, DWORD &d
 	printf("Elapsed time: %f seconds", elapsed_secs);
 
 	dwRetSamples = sampleCount;
+}
+
+// return a value from 0 to 1 based on a track bar control
+double SpinSoundDelegate::getPotValue(HWND hwndPot) {
+	UINT value = SendMessage(hwndPot, TBM_GETPOS, 0, 0);
+	UINT range = 100;
+	UINT finalValue = range - value;
+	return (double)finalValue * 1.0 / (double)range;
 }
 
 BOOL SpinSoundDelegate::ExecuteInstruction(Instruction* inst, unsigned int index, unsigned int & skipLines) {
