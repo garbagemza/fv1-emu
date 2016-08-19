@@ -48,20 +48,6 @@ bool SoundClass::Initialize(HWND hwnd)
 		return false;
 	}
 
-	// Load a wave audio file onto a secondary buffer.
-	result = LoadWaveFile("C:/Users/Mauro/Desktop/sound01.wav", &m_lpDSB);
-	if (!result)
-	{
-		return false;
-	}
-
-	// Play the wave file now that it has been loaded.
-	result = PlayWaveFile();
-	if (!result)
-	{
-		return false;
-	}
-
 	return true;
 }
 

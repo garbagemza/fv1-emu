@@ -84,11 +84,11 @@ struct PassTwoResult {
 
 struct SpinFile {
 
-	map<string, Param> equMap;
-	map<string, Memory*> memMap;
+	map<string, Param>		equMap;
+	map<string, Memory*>	memMap;
 
-	PassTwoResult passTwo;
-	bool passOneSemanticSucceeded;
+	PassTwoResult			passTwo;
+	bool					passOneSemanticSucceeded;
 
 	SpinFile() {
 		passOneSemanticSucceeded = false;

@@ -11,7 +11,7 @@ struct Timer;
 // flags used for CHO opcode
 struct CHOFlags {
 
-	static const unsigned int UNKNOWN_CHO_FLAG = -1;
+	static const unsigned int UNKNOWN_CHO_FLAG = 0xFFFFFFFF;
 
 	static const unsigned int SIN = 0;			// $0 Select SIN output(default) (Sine LFO only)
 	static const unsigned int COS = 1;			// Select COS output(Sine LFO only)

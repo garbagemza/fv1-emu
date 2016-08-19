@@ -488,7 +488,7 @@ unsigned int Parser::getChoFlagWithString(string id) {
 	return CHOFlags::UNKNOWN_CHO_FLAG;
 }
 
-unsigned int	Parser::getChoFlagsValueWithLine(vector<Lexer::Token*>& line) {
+unsigned int Parser::getChoFlagsValueWithLine(vector<Lexer::Token*>& line) {
 	unsigned int choFlags = CHOFlags::UNKNOWN_CHO_FLAG;
 	if (line.size() > 0) {
 		if (line[0]->type == Lexer::TOKEN_TYPE::IDENTIFIER) {
