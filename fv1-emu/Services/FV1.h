@@ -87,60 +87,111 @@ public:
 		REG31,
 
 	};
-	double pacc = 0;
-	double acc = 0;
-	double lr = 0;
-	double adcl = 0;		// left input
-	double adcr = 0;		// right input
+	double pacc;
+	double acc;
+	double lr;
+	double adcl;		// left input
+	double adcr;		// right input
 
-	double dacl = 0;		// left output
-	double dacr = 0;		// right output
+	double dacl;		// left output
+	double dacr;		// right output
 
-	double pot0 = 0;
-	double pot1 = 0;
-	double pot2 = 0;
+	double pot0;
+	double pot1;
+	double pot2;
 
-	double reg0 = 0;
-	double reg1 = 0;
-	double reg2 = 0;
-	double reg3 = 0;
-	double reg4 = 0;
-	double reg5 = 0;
-	double reg6 = 0;
-	double reg7 = 0;
-	double reg8 = 0;
-	double reg9 = 0;
-	double reg10 = 0;
+	double reg0;
+	double reg1;
+	double reg2;
+	double reg3;
+	double reg4;
+	double reg5;
+	double reg6;
+	double reg7;
+	double reg8;
+	double reg9;
+	double reg10;
 
-	double reg11 = 0;
-	double reg12 = 0;
-	double reg13 = 0;
-	double reg14 = 0;
-	double reg15 = 0;
-	double reg16 = 0;
-	double reg17 = 0;
-	double reg18 = 0;
-	double reg19 = 0;
+	double reg11;
+	double reg12;
+	double reg13;
+	double reg14;
+	double reg15;
+	double reg16;
+	double reg17;
+	double reg18;
+	double reg19;
 
-	double reg20 = 0;
-	double reg21 = 0;
-	double reg22 = 0;
-	double reg23 = 0;
-	double reg24 = 0;
-	double reg25 = 0;
-	double reg26 = 0;
-	double reg27 = 0;
-	double reg28 = 0;
-	double reg29 = 0;
-	double reg30 = 0;
-	double reg31 = 0;
+	double reg20;
+	double reg21;
+	double reg22;
+	double reg23;
+	double reg24;
+	double reg25;
+	double reg26;
+	double reg27;
+	double reg28;
+	double reg29;
+	double reg30;
+	double reg31;
 
 	// oscillators
-	double sin0_rate = 0.0;
-	double sin1_rate = 0.0;
+	double sin0_rate;
+	double sin1_rate;
 
-	double sin0_range = 0;
-	double sin1_range = 0;
+	double sin0_range;
+	double sin1_range;
+
+	FV1() {
+		pacc = 0;
+		acc = 0;
+		lr = 0;
+		adcl = 0;
+		adcr = 0;
+		dacl = 0;
+		dacr = 0;
+		pot0 = 0;
+		pot1 = 0;
+		pot2 = 0;
+		reg0 = 0;
+		reg1 = 0;
+		reg2 = 0;
+		reg3 = 0;
+		reg4 = 0;
+		reg5 = 0;
+		reg6 = 0;
+		reg7 = 0;
+		reg8 = 0;
+		reg9 = 0;
+		reg10 = 0;
+
+		reg11 = 0;
+		reg12 = 0;
+		reg13 = 0;
+		reg14 = 0;
+		reg15 = 0;
+		reg16 = 0;
+		reg17 = 0;
+		reg18 = 0;
+		reg19 = 0;
+
+		reg20 = 0;
+		reg21 = 0;
+		reg22 = 0;
+		reg23 = 0;
+		reg24 = 0;
+		reg25 = 0;
+		reg26 = 0;
+		reg27 = 0;
+		reg28 = 0;
+		reg29 = 0;
+		reg30 = 0;
+		reg31 = 0;
+		sin0_rate = 0.0;
+		sin1_rate = 0.0;
+		sin0_range = 0;
+		sin1_range = 0;
+	}
 
 	void mem(Memory** addr, unsigned int size);
 	void rdax(double regValue, double coefficient);

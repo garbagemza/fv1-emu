@@ -52,13 +52,20 @@ class SpinSoundDelegate : public ISoundDelegate {
 	void UpdateDelayMemories();
 	//double getPotValue(HWND hwndPot);
 
-	SignalGenerator* generator = 0;
-	SpinFile* spinFile = 0;
+	SignalGenerator* generator;
+	SpinFile* spinFile;
+	Timer* timer;
+	Timer* fv1Timer;
+	unsigned int memCount;
 
-	Timer* timer = 0;
-	Timer* fv1Timer = 0;
+	SpinSoundDelegate() {
+		generator = 0;
+		spinFile = 0;
+		timer = 0;
+		fv1Timer = 0;
+		memCount = 0;
+	}
 
-	unsigned int memCount = 0;
 	Memory* memoryArray[128];
 
 	bool isFirstExecution;

@@ -21,6 +21,9 @@ ISoundDelegate* AudioStreamManager::soundDelegate = NULL;
 unsigned int AudioStreamManager::sampleNumber = 0;
 
 
+AudioStreamManager::AudioStreamManager() {
+	this->audioStream = 0;
+}
 /* This routine will be called by the PortAudio engine when audio is needed.
 ** It may be called at interrupt level on some machines so don't do anything
 ** that could mess up the system like calling malloc() or free().

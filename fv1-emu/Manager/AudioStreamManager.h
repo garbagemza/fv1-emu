@@ -24,7 +24,7 @@ class AudioStreamManager {
 public:
 	int StreamAudio(ISoundDelegate* delegate);
 	int StopAudio();
-
+	AudioStreamManager();
 private:
 	static int readStreamCallback(const void *inputBuffer, void *outputBuffer,
 		unsigned long framesPerBuffer,
@@ -36,5 +36,5 @@ private:
 	static unsigned int sampleNumber;
 	static int numNoInputs;
 
-	PaStream *audioStream = 0;
+	PaStream *audioStream;
 };

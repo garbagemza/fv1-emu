@@ -14,10 +14,17 @@ enum MemoryPosition {
 };
 
 struct MemoryAddress {
-	Memory* mem = 0;
-	signed int displacement = 0;
-	signed int lfoDisplacement = 0;
-	MemoryPosition position = Start;
+	Memory* mem;
+	signed int displacement;
+	signed int lfoDisplacement;
+	MemoryPosition position;
+
+	MemoryAddress() {
+		mem = 0;
+		displacement = 0;
+		lfoDisplacement = 0;
+		position = Start;
+	}
 };
 
 class MemoryManager {
