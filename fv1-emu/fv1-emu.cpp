@@ -3,7 +3,6 @@
 
 #include "fv1-emu.h"
 #include "Manager\AudioStreamManager.h"
-#include "Utilities\SoundClass.h"
 #include "Utilities\SoundUtilities.h"
 #include "Utilities\ParseUtil.h"
 #include "Utilities\SCLog.h"
