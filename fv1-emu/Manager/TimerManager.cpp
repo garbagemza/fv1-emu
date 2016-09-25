@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include <Windows.h>
 #include "TimerManager.h"
 
 Timer* TimerManager::createTimer(unsigned int samplesPerSecond)

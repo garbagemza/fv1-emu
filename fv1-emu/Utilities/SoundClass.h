@@ -22,13 +22,6 @@
 #include <dsound.h>
 #include <stdio.h>
 
-struct ISoundDelegate
-{
-public:
-	virtual void willBeginPlay() = 0;
-	virtual void getAudioChunk(LPVOID audioBuffer, DWORD sampleCount, DWORD &dwRetSamples) = 0;
-	virtual void didEndPlay() = 0;
-};
 
 ///////////////////////////////////////////////////////////////////////////////
 // Class name: SoundClass
@@ -69,8 +62,7 @@ public:
 
 	void TimerCallback();
 
-	//void SetCallback(LPGETAUDIOSAMPLES_PROGRESS Function_Callback, LPVOID lpData);
-	void SetDelegate(ISoundDelegate* delegate);
+	//void SetDelegate(ISoundDelegate* delegate);
 	bool CreateSoundBuffer();
 	bool Play();
 	bool Stop();
@@ -89,7 +81,7 @@ private:
 	IDirectSoundBuffer* m_primaryBuffer;
 	IDirectSound8* m_lpDS;
 	IDirectSoundBuffer8* m_lpDSB;
-	ISoundDelegate* m_SoundDelegate;
+	//ISoundDelegate* m_SoundDelegate;
 
 	HANDLE m_pHEvent[2];
 

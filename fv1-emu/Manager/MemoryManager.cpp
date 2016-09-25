@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include <Windows.h>
 #include "MemoryManager.h"
 
 Memory* MemoryManager::createMemory(unsigned int size) {

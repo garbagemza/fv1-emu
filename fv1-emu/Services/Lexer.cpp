@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "Lexer.h"
 
 Lexer::Lexer(void* lpBuffer, unsigned int size) {

@@ -147,11 +147,6 @@ void SoundClass::ShutdownDirectSound()
 	return;
 }
 
-//void SoundClass::SetCallback(LPGETAUDIOSAMPLES_PROGRESS Function_Callback, LPVOID lpData)
-//{
-//	m_lpGETAUDIOSAMPLES = Function_Callback;
-//	m_lpData = lpData;
-//}
 
 void SoundClass::SetDelegate(ISoundDelegate* delegate)
 {
@@ -177,7 +172,7 @@ bool SoundClass::CreateSoundBuffer()
 	// Set the buffer description of the secondary sound buffer that the wave file will be loaded onto.
 	bufferDesc.dwSize = sizeof(DSBUFFERDESC);
 	bufferDesc.dwFlags = DSBCAPS_CTRLVOLUME | DSBCAPS_CTRLPOSITIONNOTIFY | DSBCAPS_GLOBALFOCUS;
-	bufferDesc.dwBufferBytes = m_WFE.nSamplesPerSec * 2; // 2 seconds
+	bufferDesc.dwBufferBytes = 2 * m_WFE.nAvgBytesPerSec; //2 Seconds Buffer
 	bufferDesc.dwReserved = 0;
 	bufferDesc.lpwfxFormat = &m_WFE;
 	bufferDesc.guid3DAlgorithm = GUID_NULL;
@@ -208,8 +203,8 @@ bool SoundClass::CreateSoundBuffer()
 
 	//Set Direct Sound Buffer Notify Position
 	DSBPOSITIONNOTIFY pPosNotify[2];
-	pPosNotify[0].dwOffset = 44100 / 2 - 1;
-	pPosNotify[1].dwOffset = 3 * 44100 / 2 - 1;
+	pPosNotify[0].dwOffset = m_WFE.nAvgBytesPerSec / 2 - 1;
+	pPosNotify[1].dwOffset = 3 * m_WFE.nAvgBytesPerSec / 2 - 1;
 	pPosNotify[0].hEventNotify = m_pHEvent[0];
 	pPosNotify[1].hEventNotify = m_pHEvent[1];
 
@@ -251,12 +246,11 @@ bool SoundClass::Play()
 		//Get audio data by callback function
 		DWORD dwRetSamples = 0, dwRetBytes = 0;
 		
-		if (m_SoundDelegate != NULL) {
-			m_SoundDelegate->getAudioChunk(m_lpAudioBuf, m_WFE.nSamplesPerSec, dwRetSamples); // 1 second
-		}
+		//if (m_SoundDelegate != NULL) {
+		//	m_SoundDelegate->getAudioChunk(m_lpAudioBuf, m_WFE.nSamplesPerSec, dwRetSamples); // 1 second
+		//}
 
-		//m_lpGETAUDIOSAMPLES(m_lpAudioBuf, m_WFE.nSamplesPerSec, dwRetSamples, m_lpData); // 1 second
-		dwRetBytes = dwRetSamples * m_WFE.nBlockAlign;
+		//dwRetBytes = dwRetSamples * m_WFE.nBlockAlign;
 
 		//Write the audio data to DirectSoundBuffer
 		LPVOID lpvAudio1 = NULL, lpvAudio2 = NULL;
@@ -279,13 +273,13 @@ bool SoundClass::Play()
 		}
 
 		//Copy Audio Buffer to DirectSoundBuffer
-		if (NULL == lpvAudio2) {
-			memcpy(lpvAudio1, m_lpAudioBuf, dwRetBytes);
-		}
-		else {
-			memcpy(lpvAudio1, m_lpAudioBuf, dwBytesAudio1);
-			memcpy(lpvAudio2, m_lpAudioBuf + dwBytesAudio1, dwBytesAudio2);
-		}
+		//if (NULL == lpvAudio2) {
+		//	memcpy(lpvAudio1, m_lpAudioBuf, dwRetBytes);
+		//}
+		//else {
+		//	memcpy(lpvAudio1, m_lpAudioBuf, dwBytesAudio1);
+		//	memcpy(lpvAudio2, m_lpAudioBuf + dwBytesAudio1, dwBytesAudio2);
+		//}
 
 		//Unlock DirectSoundBuffer
 		m_lpDSB->Unlock(lpvAudio1, dwBytesAudio1, lpvAudio2, dwBytesAudio2);
@@ -307,7 +301,7 @@ bool SoundClass::Play()
 	}
 
 	//timeSetEvent
-	m_timerID = timeSetEvent(200, 100, TimerProcess, (DWORD)this, TIME_PERIODIC | TIME_CALLBACK_FUNCTION);
+	m_timerID = timeSetEvent(10, 10, TimerProcess, (DWORD)this, TIME_PERIODIC | TIME_CALLBACK_FUNCTION);
 
 	return true;
 }
@@ -568,22 +562,43 @@ void SoundClass::TimerCallback()
 	DWORD dwRetSamples = 0, dwRetBytes = 0;
 
 	HRESULT hr = WaitForMultipleObjects(2, m_pHEvent, FALSE, 0);
+	static bool set = false;
+	static bool set2 = false;
+
 	if (WAIT_OBJECT_0 == hr) {
+		if (set) return;
+		set = true;
+
+		DWORD dwCurrentPlayCursor = 0;
+		DWORD dwCurrentWriteCursor = 0;
+		hr = m_lpDSB->GetCurrentPosition(&dwCurrentPlayCursor, &dwCurrentWriteCursor);
+		if (FAILED(hr)) {
+			return;
+		}
 
 		m_dwCircles1++;
-
+		
 		//Lock DirectSoundBuffer Second Part
-		HRESULT hr = m_lpDSB->Lock(m_WFE.nAvgBytesPerSec, m_WFE.nAvgBytesPerSec, &lpvAudio1, &dwBytesAudio1, &lpvAudio2, &dwBytesAudio2, 0);
+		DWORD offset = m_WFE.nAvgBytesPerSec - dwCurrentPlayCursor;
+		HRESULT hr = m_lpDSB->Lock(offset, m_WFE.nAvgBytesPerSec, &lpvAudio1, &dwBytesAudio1, &lpvAudio2, &dwBytesAudio2, 0);
 		if (FAILED(hr)) {
 			return;
 		}
 	}
 	else if (WAIT_OBJECT_0 + 1 == hr) {
-
+		if(set2) return;
+		set2 = true;
+		DWORD dwCurrentPlayCursor = 0;
+		DWORD dwCurrentWriteCursor = 0;
+		hr = m_lpDSB->GetCurrentPosition(&dwCurrentPlayCursor, &dwCurrentWriteCursor);
+		if (FAILED(hr)) {
+			return;
+		}
 		m_dwCircles2++;
-
-		//Lock DirectSoundBuffer First Part
-		HRESULT hr = m_lpDSB->Lock(0, m_WFE.nAvgBytesPerSec, &lpvAudio1, &dwBytesAudio1, &lpvAudio2, &dwBytesAudio2, 0);
+		
+		//Lock DirectSoundBuffer first Part
+		DWORD offset = 2* m_WFE.nAvgBytesPerSec - dwCurrentPlayCursor + m_WFE.nAvgBytesPerSec - 288;
+		HRESULT hr = m_lpDSB->Lock(offset, m_WFE.nAvgBytesPerSec, &lpvAudio1, &dwBytesAudio1, &lpvAudio2, &dwBytesAudio2, 0);
 		if (FAILED(hr)) {
 			return;
 		}

@@ -1,5 +1,4 @@
-#include "stdafx.h"
-
+#include <Windows.h>
 #include "SoundUtilities.h"
 #include "..\Manager\TimerManager.h"
 

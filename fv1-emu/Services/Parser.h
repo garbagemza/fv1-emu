@@ -1,6 +1,7 @@
 #pragma once
 #include "Lexer.h"
 #include "FV1.h"
+#include <Windows.h>
 
 enum MemoryPosition;
 

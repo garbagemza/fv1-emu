@@ -2,7 +2,6 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="fv1-emu.cpp" />
-    <ClCompile Include="stdafx.cpp" />
     <ClCompile Include="Manager\MemoryManager.cpp">
       <Filter>Manager</Filter>
     </ClCompile>
@@ -21,9 +20,6 @@
     <ClCompile Include="Utilities\ParseUtil.cpp">
       <Filter>Utilities</Filter>
     </ClCompile>
-    <ClCompile Include="Utilities\SoundClass.cpp">
-      <Filter>Utilities</Filter>
-    </ClCompile>
     <ClCompile Include="Utilities\SoundUtilities.cpp">
       <Filter>Utilities</Filter>
     </ClCompile>
@@ -33,10 +29,12 @@
     <ClCompile Include="Services\Parser.cpp">
       <Filter>Services</Filter>
     </ClCompile>
+    <ClCompile Include="Manager\AudioStreamManager.cpp">
+      <Filter>Manager</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="fv1-emu.h" />
-    <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="Manager\MemoryManager.h">
       <Filter>Manager</Filter>
@@ -56,9 +54,6 @@
     <ClInclude Include="Utilities\ParseUtil.h">
       <Filter>Utilities</Filter>
     </ClInclude>
-    <ClInclude Include="Utilities\SoundClass.h">
-      <Filter>Utilities</Filter>
-    </ClInclude>
     <ClInclude Include="Utilities\SoundUtilities.h">
       <Filter>Utilities</Filter>
     </ClInclude>
@@ -70,6 +65,9 @@
     </ClInclude>
     <ClInclude Include="Services\Parser.h">
       <Filter>Services</Filter>
+    </ClInclude>
+    <ClInclude Include="Manager\AudioStreamManager.h">
+      <Filter>Manager</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

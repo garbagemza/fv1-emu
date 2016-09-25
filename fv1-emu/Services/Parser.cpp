@@ -1,9 +1,9 @@
-#include "stdafx.h"
 #include "Parser.h"
 #include "..\Utilities\ParseUtil.h"
 #include "..\Manager\MemoryManager.h"
 #include "..\Utilities\SCLog.h"
 #include <cassert>
+#include <Windows.h>
 
 Parser::Parser(FV1* fv1) {
 	this->fv1 = fv1;

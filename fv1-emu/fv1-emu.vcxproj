@@ -42,22 +42,27 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(ProjectDir)/Third-Party/PortAudio/include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)/Third-Party/PortAudio/lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <BrowseInformation>true</BrowseInformation>
+      <PrecompiledHeaderFile />
+      <PrecompiledHeaderOutputFile />
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>portaudio_x86.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Bscmake>
       <PreserveSbr>true</PreserveSbr>
@@ -85,35 +90,30 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="fv1-emu.h" />
+    <ClInclude Include="Manager\AudioStreamManager.h" />
     <ClInclude Include="Manager\MemoryManager.h" />
     <ClInclude Include="Manager\TimerManager.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="Services\FV1.h" />
     <ClInclude Include="Services\Lexer.h" />
     <ClInclude Include="Services\Parser.h" />
-    <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="Utilities\MathUtils.h" />
     <ClInclude Include="Utilities\ParseUtil.h" />
     <ClInclude Include="Utilities\SCLog.h" />
-    <ClInclude Include="Utilities\SoundClass.h" />
     <ClInclude Include="Utilities\SoundUtilities.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="fv1-emu.cpp" />
+    <ClCompile Include="Manager\AudioStreamManager.cpp" />
     <ClCompile Include="Manager\MemoryManager.cpp" />
     <ClCompile Include="Manager\TimerManager.cpp" />
     <ClCompile Include="Services\FV1.cpp" />
     <ClCompile Include="Services\Lexer.cpp" />
     <ClCompile Include="Services\Parser.cpp" />
-    <ClCompile Include="stdafx.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
-    </ClCompile>
     <ClCompile Include="Utilities\MathUtils.cpp" />
     <ClCompile Include="Utilities\ParseUtil.cpp" />
     <ClCompile Include="Utilities\SCLog.cpp" />
-    <ClCompile Include="Utilities\SoundClass.cpp" />
     <ClCompile Include="Utilities\SoundUtilities.cpp" />
   </ItemGroup>
   <ItemGroup>

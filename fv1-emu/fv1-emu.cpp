@@ -1,8 +1,8 @@
 // fv1-emu.cpp : Defines the entry point for the application.
 //
 
-#include "stdafx.h"
 #include "fv1-emu.h"
+#include "Manager\AudioStreamManager.h"
 #include "Utilities\SoundClass.h"
 #include "Utilities\SoundUtilities.h"
 #include "Utilities\ParseUtil.h"
@@ -18,16 +18,20 @@
 #include <Commctrl.h>
 #include <vector>
 #include <map>
-#include <ctime>
+#include <cassert>
+#include <tchar.h>
+
 #pragma comment(lib, "Comctl32.lib")
+
 
 using namespace std;
 
 #define MAX_LOADSTRING 100
+#define IDT_TIMER1 100
 
 // Global Variables:
 HINSTANCE hInst;								// current instance
-
+HWND hWnd;
 HWND hwndPot0;									// pot handles
 HWND hwndPot1;
 HWND hwndPot2;
@@ -35,20 +39,19 @@ HWND hwndPot2;
 TCHAR szTitle[MAX_LOADSTRING];					// The title bar text
 TCHAR szWindowClass[MAX_LOADSTRING];			// the main window class name
 
-SoundClass* m_Sound = 0;
 struct SpinFile;
 SpinFile* spinResult = 0;
+AudioStreamManager* audioStream = 0;
 FV1* fv1 = 0;
-
 
 class SpinSoundDelegate : public ISoundDelegate {
 	void willBeginPlay();
-	void getAudioChunk(LPVOID, DWORD, DWORD&);
+	GetSampleResult getSample(float& left, float& right, unsigned int sampleNumber);
 	void didEndPlay();
 
 	BOOL ExecuteInstruction(Instruction* inst, unsigned int index, unsigned int& skipLines);
 	void UpdateDelayMemories();
-	double getPotValue(HWND hwndPot);
+	//double getPotValue(HWND hwndPot);
 
 	SignalGenerator* generator = 0;
 	SpinFile* spinFile = 0;
@@ -76,6 +79,17 @@ VOID					PromptOpenFile();
 VOID					OpenFileForReadAndLoad(LPWSTR filename);
 VOID					LoadFile(HANDLE file, FV1*);
 HWND WINAPI				CreateTrackbar(HINSTANCE hInstance, HWND hwndDlg, UINT iMin, UINT iMax, UINT xOffset);
+void					StreamAudio(ISoundDelegate* delegate);
+void					StopAudio();
+void					updatePotentiometers();
+
+int main();
+
+int main() {
+
+	HINSTANCE hinst = GetModuleHandle(NULL);
+	return _tWinMain(hinst, NULL, NULL, SW_NORMAL);
+}
 
 int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -156,9 +170,9 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 //
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
-   HWND hWnd;
 
    hInst = hInstance; // Store instance handle in our global variable
+
 
    hWnd = CreateWindow(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
       CW_USEDEFAULT, 0, 320, 480, NULL, NULL, hInstance, NULL);
@@ -168,20 +182,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
       return FALSE;
    }
 
-   // Create the sound object.
-   m_Sound = new SoundClass;
-   if (!m_Sound)
-   {
-	   return false;
-   }
-
-   // Initialize the sound object.
-   bool result = m_Sound->Initialize(hWnd);
-   if (!result)
-   {
-	   MessageBox(hWnd, L"Could not initialize Direct Sound.", L"Error", MB_OK);
-	   return false;
-   }
 
    SCLog::mainInstance()->setupLogging();
    // initialize fv1
@@ -230,11 +230,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			break;
 		case IDM_GENERATOR:
 			{
-				bool created = m_Sound->CreateSoundBuffer();
-				if (created) {
-					m_Sound->SetDelegate(new SpinSoundDelegate(spinResult));
-					m_Sound->Play();
-				}
+				ISoundDelegate* delegate = new SpinSoundDelegate(spinResult);
+				StreamAudio(delegate);
 			}
 			break;
 		case IDM_EXIT:
@@ -244,12 +241,22 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			return DefWindowProc(hWnd, message, wParam, lParam);
 		}
 		break;
+	case WM_TIMER:
+		switch (wParam) {
+		case IDT_TIMER1:
+			{
+				updatePotentiometers();
+			}
+			break;
+		}
+		break;
 	case WM_PAINT:
 		hdc = BeginPaint(hWnd, &ps);
 		// TODO: Add any drawing code here...
 		EndPaint(hWnd, &ps);
 		break;
 	case WM_DESTROY:
+		StopAudio();
 		PostQuitMessage(0);
 		break;
 	default:
@@ -323,7 +330,7 @@ HWND WINAPI CreateTrackbar(
 
 void SpinSoundDelegate::willBeginPlay() {
 
-	generator = SoundUtilities::createSignalGenerator(SignalType::Sinusoidal, 200.0);
+	generator = SoundUtilities::createSignalGenerator(SignalType::Sinusoidal, 1000.0);
 	timer = TimerManager::createTimer(44100);
 	fv1Timer = TimerManager::createTimer(FV1_SAMPLE_RATE);
 
@@ -346,79 +353,90 @@ void SpinSoundDelegate::willBeginPlay() {
 	}
 }
 
-void SpinSoundDelegate::getAudioChunk(LPVOID buffer, DWORD sampleCount, DWORD &dwRetSamples) {
+void StreamAudio(ISoundDelegate* delegate) {
+	updatePotentiometers();
 
-	clock_t begin = clock();
-	bool spinLoaded = spinFile != NULL && spinFile->passOneSemanticSucceeded;
-	unsigned int instructionCount = spinLoaded ? spinFile->passTwo.instructionCount : 0;
-	Instruction** instructions = spinLoaded ? spinFile->passTwo.instructions : NULL;
-
-	for (unsigned int i = 0; i < sampleCount; i++) {
-		TimerManager::updateTimerWithSampleNumber(timer, i);
-
-		// updates t based on main sample rate frequency.
-		TimerManager::updateTimerWithTimer(fv1Timer, timer);
-
-		// set up potentiometers
-		double pot0Value = getPotValue(hwndPot0);
-		double pot1Value = getPotValue(hwndPot1);
-		double pot2Value = getPotValue(hwndPot2);
-
-		fv1->pot0 = pot0Value;
-		fv1->pot1 = pot1Value;
-		fv1->pot2 = pot2Value;
-
-
-		fv1->adcl = 0.5 * SoundUtilities::sampleWithTime(generator, timer);
-		fv1->adcr = fv1->adcl;
-		
-		if (i > 9000) {
-			fv1->adcl = 0;			// cut sound
-			fv1->adcr = 0;
-		}
-
-		if (spinLoaded) {
-
-			for (unsigned int i = 0; i < instructionCount; i++) {
-				Instruction* inst = instructions[i];
-				unsigned int skipLines = 0;
-				BOOL ok = ExecuteInstruction(inst, i, skipLines);
-				if (ok && skipLines != 0) {
-					i += skipLines;
-				}
-				else if (!ok) {
-					throw exception("unrecognized instruction");
-				}
-			}
-
-			UpdateDelayMemories();
-			if (isFirstExecution) {
-				isFirstExecution = false;
-			}
-		}
-		else {
-			// if not spin file loaded then copy input registers to output registers
-			fv1->dacl = fv1->adcl;
-			fv1->dacr = fv1->adcr;
-		}
-
-		((short*)buffer)[i] = (short)(8000.0 * (fv1->dacl + fv1->dacr));
+	if (audioStream == NULL) {
+		// FIXME: timer should start on succeeded initialization of a stream
+		SetTimer(hWnd, IDT_TIMER1, 1000, (TIMERPROC)NULL);
+		audioStream = new AudioStreamManager();
+		audioStream->StreamAudio(delegate);
 	}
-
-	clock_t end = clock();
-	double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
-	printf("Elapsed time: %f seconds", elapsed_secs);
-
-	dwRetSamples = sampleCount;
+}
+void StopAudio() {
+	if (audioStream != NULL) {
+		KillTimer(hWnd, IDT_TIMER1);
+		audioStream->StopAudio();
+	}
 }
 
 // return a value from 0 to 1 based on a track bar control
-double SpinSoundDelegate::getPotValue(HWND hwndPot) {
+double getPotValue(HWND hwndPot) {
 	UINT value = SendMessage(hwndPot, TBM_GETPOS, 0, 0);
 	UINT range = 100;
 	UINT finalValue = range - value;
 	return (double)finalValue * 1.0 / (double)range;
 }
+
+void updatePotentiometers() {
+	// set up potentiometers 
+	// Note: these api calls are very slow
+	double pot0Value = getPotValue(hwndPot0);
+	double pot1Value = getPotValue(hwndPot1);
+	double pot2Value = getPotValue(hwndPot2);
+
+	fv1->pot0 = pot0Value;
+	fv1->pot1 = pot1Value;
+	fv1->pot2 = pot2Value;
+}
+
+
+GetSampleResult SpinSoundDelegate::getSample(float& left, float& right, unsigned int sampleNumber) {
+
+	bool spinLoaded = spinFile != NULL && spinFile->passOneSemanticSucceeded;
+	unsigned int instructionCount = spinLoaded ? spinFile->passTwo.instructionCount : 0;
+	Instruction** instructions = spinLoaded ? spinFile->passTwo.instructions : NULL;
+
+
+	TimerManager::updateTimerWithSampleNumber(timer, sampleNumber);
+
+	// updates t based on main sample rate frequency.
+	TimerManager::updateTimerWithTimer(fv1Timer, timer);
+
+	fv1->adcl = left;
+	fv1->adcr = right;
+		
+	if (spinLoaded) {
+
+		for (unsigned int i = 0; i < instructionCount; i++) {
+			Instruction* inst = instructions[i];
+			unsigned int skipLines = 0;
+			BOOL ok = ExecuteInstruction(inst, i, skipLines);
+			if (ok && skipLines != 0) {
+				i += skipLines;
+			}
+			else if (!ok) {
+				throw exception("unrecognized instruction");
+			}
+		}
+
+		UpdateDelayMemories();
+		if (isFirstExecution) {
+			isFirstExecution = false;
+		}
+	}
+	else {
+		// if not spin file loaded then copy input registers to output registers
+		fv1->dacl = fv1->adcl;
+		fv1->dacr = fv1->adcr;
+	}
+
+	left = fv1->dacl;
+	right = fv1->dacr;
+
+	return Continue;
+}
+
 
 BOOL SpinSoundDelegate::ExecuteInstruction(Instruction* inst, unsigned int index, unsigned int & skipLines) {
 

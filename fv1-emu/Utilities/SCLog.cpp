@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "SCLog.h"
 #include <iostream>
 #include <string>

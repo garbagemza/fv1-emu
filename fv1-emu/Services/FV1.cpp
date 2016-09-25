@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "FV1.h"
 #include "..\Manager\MemoryManager.h"
 #include "..\Manager\TimerManager.h"
@@ -9,7 +8,7 @@
 
 #define _USE_MATH_DEFINES
 #include <math.h>
-
+#include <algorithm>
 
 void FV1::mem(Memory** memory, unsigned int size) {
 	*memory = MemoryManager::createMemory(size);
