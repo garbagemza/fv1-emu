@@ -6,6 +6,10 @@
 double log2(double acc) {
 	return log(acc) / log(2.0);
 }
+
+bool signbit(double n) {
+	return n < 0.0;
+}
 #endif
 #endif
 double fv1log2(double acc) {
