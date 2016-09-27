@@ -25,3 +25,25 @@ double fv1log2(double acc) {
 double fv1exp2(double value) {
 	return pow(2.0, value);
 }
+
+//S.23 Fixed point number with MSB as the sign bit, everything else is mantissa
+// giving values between -1.0 and 1.0.
+double hex2s23(unsigned int value) {
+	double result = 0.0;
+	bool sign = (value & 0x800000) != 0;
+	long long mantissa = (value & 0x7FFFFF);
+	result = sign ? -mantissa / 8388607.0 : mantissa / 8388607.0;
+	return result;
+}
+
+unsigned int s23tohex(double value) {
+	bool sign = value < 0.0;
+	if (value > 1.0) value = 1.0;
+	if (value < -1.0) value = -1.0;
+
+	unsigned int result = sign ? 1 << 23 : 0;
+	value = sign ? -value : value;
+	unsigned int mantissa = (unsigned int)floor((value * 8388607.0) + 0.5);
+	result |= mantissa;
+	return result;
+}

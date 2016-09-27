@@ -2,6 +2,8 @@
 #include "..\Utilities\ParseUtil.h"
 #include "..\Manager\MemoryManager.h"
 #include "..\Utilities\SCLog.h"
+#include "..\Utilities\MathUtils.h"
+
 #include <cassert>
 #include <Windows.h>
 
@@ -80,10 +82,23 @@ BOOL Parser::PassOneParse(vector<vector<Lexer::Token*>> lines) {
 							equ.regAddress = fv1->getAddressOfIdentifier(v[2]->name);
 						}
 						else if (v[2]->type == Lexer::TOKEN_TYPE::NUMBER) {
-							double coeff = 0;
-							STR2NUMBER_ERROR err = str2dble(coeff, v[2]->name.c_str());
-							if (err == SUCCESS) {
-								equ.doubleValue = coeff;
+							if (isHexS23Value(equ.value)) {
+								unsigned int hexValue = 0;
+								string value = equ.value.replace(0, 1, "0x");
+								STR2NUMBER_ERROR err = hexstr2uint(hexValue, value.c_str());
+								if (err == SUCCESS) {
+
+									// check mathutils
+									equ.doubleValue = hex2s23(hexValue);
+									equ.unsignedIntValue = hexValue;
+								}
+							}
+							else {
+								double coeff = 0;
+								STR2NUMBER_ERROR err = str2dble(coeff, v[2]->name.c_str());
+								if (err == SUCCESS) {
+									equ.doubleValue = coeff;
+								}
 							}
 						}
 						equMap[v[1]->name] = equ;
@@ -253,6 +268,7 @@ Param* Parser::GetParameter(vector<Lexer::Token*>& line, unsigned int currentIns
 			if (it3 != equMap.end()) {
 				Param p = (*it3).second;
 				arg0->doubleValue = negative ? p.doubleValue * -1.0 : p.doubleValue;
+				arg0->unsignedIntValue = s23tohex(arg0->doubleValue);
 			}
 
 			map<string, unsigned int>::iterator it2 = labels.find(arg0->value);
@@ -276,10 +292,29 @@ Param* Parser::GetParameter(vector<Lexer::Token*>& line, unsigned int currentIns
 		else if (line[0]->type == Lexer::TOKEN_TYPE::NUMBER) {
 			arg0->type = line[0]->type;
 			arg0->value = line[0]->name;
-			if (isHexValue(arg0->value)) {
+			if (isHexIntegerValue(arg0->value)) {
 				unsigned int hexValue = 0;
 				STR2NUMBER_ERROR err = hexstr2uint(hexValue, arg0->value.c_str());
 				if (err == SUCCESS) {
+					arg0->unsignedIntValue = hexValue;
+				}
+			}
+			else if (isBinaryS23Value(arg0->value)) {
+				unsigned int hexValue = 0;
+				string value = arg0->value.replace(0, 1, ""); // removed first character
+				STR2NUMBER_ERROR err = binstr2uint(hexValue, value.c_str());
+				if (err == SUCCESS) {
+					arg0->doubleValue = hex2s23(hexValue);
+					arg0->unsignedIntValue = hexValue;
+				}
+
+			}
+			else if (isHexS23Value(arg0->value)) {
+				unsigned int hexValue = 0;
+				string value = arg0->value.replace(0, 1, "0x");
+				STR2NUMBER_ERROR err = hexstr2uint(hexValue, value.c_str());
+				if (err == SUCCESS) {
+					arg0->doubleValue = hex2s23(hexValue);
 					arg0->unsignedIntValue = hexValue;
 				}
 			}
@@ -366,6 +401,15 @@ Opcode Parser::InstructionOpcodeWithString(string& instruction) {
 	}
 	else if (_stricmp(instruction.c_str(), "cho") == 0) {
 		return CHO;
+	}
+	else if (_stricmp(instruction.c_str(), "or") == 0) {
+		return OR;
+	}
+	else if (_stricmp(instruction.c_str(), "and") == 0) {
+		return AND;
+	}
+	else if (_stricmp(instruction.c_str(), "xor") == 0) {
+		return XOR;
 	}
 	else {
 		return UNKNOWN;
@@ -521,12 +565,30 @@ unsigned int Parser::getChoFlagsValueWithLine(vector<Lexer::Token*>& line) {
 }
 
 // value should start with 0 and x
-BOOL Parser::isHexValue(string value) {
+BOOL Parser::isHexIntegerValue(string value) {
+	
 	if (value.size() > 2) {
 		if (value[0] == '0' && (value[1] == 'x' || value[1] == 'X')) {
-			return true;
+			return TRUE;
 		}
 	}
+	return FALSE;
+}
 
+BOOL Parser::isHexS23Value(string value) {
+	if (value.size() > 1) {
+		if (value[0] == '$') {
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+BOOL Parser::isBinaryS23Value(string value) {
+	if (value.size() > 1) {
+		if (value[0] == '%') {
+			return TRUE;
+		}
+	}
 	return FALSE;
 }

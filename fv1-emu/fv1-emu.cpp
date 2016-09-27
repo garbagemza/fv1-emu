@@ -580,6 +580,21 @@ BOOL SpinSoundDelegate::ExecuteInstruction(Instruction* inst, unsigned int index
 
 		return true;
 	}
+	case OR:
+	{
+		fv1->or(inst->args[0]->unsignedIntValue);
+		return true;
+	}
+	case AND:
+	{
+		fv1->and(inst->args[0]->unsignedIntValue);
+		return true;
+	}
+	case XOR:
+	{
+		fv1->xor(inst->args[0]->unsignedIntValue);
+		return true;
+	}
 	}
 	return false;
 }

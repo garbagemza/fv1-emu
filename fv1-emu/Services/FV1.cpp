@@ -169,6 +169,28 @@ void FV1::cho_rda(Timer* timer, LFOType osc, unsigned int choFlags, MemoryAddres
 	rda(memAddress, 0.5);
 }
 
+void FV1::or(unsigned int value) {
+	pacc = acc;
+	unsigned int hexAcc = s23tohex(acc);
+	hexAcc |= value;
+	acc = hex2s23(hexAcc);
+}
+
+void FV1::and(unsigned int value) {
+	pacc = acc;
+	unsigned int hexAcc = s23tohex(acc);
+	hexAcc &= value;
+	acc = hex2s23(hexAcc);
+
+}
+
+void FV1::xor(unsigned int value) {
+	pacc = acc;
+	unsigned int hexAcc = s23tohex(acc);
+	hexAcc ^= value;
+	acc = hex2s23(hexAcc);
+}
+
 bool FV1::zrc() {
 	return signbit(pacc) != signbit(acc);
 }

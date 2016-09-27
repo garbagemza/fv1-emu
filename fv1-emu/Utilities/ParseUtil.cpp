@@ -79,3 +79,23 @@ STR2NUMBER_ERROR hexstr2uint(unsigned int& value, const char *s) {
 	value = (unsigned int)val;
 	return SUCCESS;
 }
+
+STR2NUMBER_ERROR binstr2uint(unsigned int& value, const char *s) {
+	errno = 0;
+	char *end;
+
+	long int val = strtol(s, &end, 2);
+	if (errno == ERANGE && val == LONG_MAX) {
+		return OVERFLOW;
+	}
+	if (errno == ERANGE && val == LONG_MIN) {
+		return UNDERFLOW;
+	}
+
+	if (*s == '\0' || *end != '\0') {
+		return INCONVERTIBLE;
+	}
+
+	value = (unsigned int)val;
+	return SUCCESS;
+}

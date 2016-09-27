@@ -92,7 +92,7 @@ Lexer::Token* Lexer::getNextToken() {
 			if (isAlpha(c)) {
 				return this->process_identifier();
 			}
-			else if (isDigitOrDot(c)) {
+			else if (isDigitPrefix(c)) {
 				return this->process_number();
 			}
 			else {
@@ -104,12 +104,23 @@ Lexer::Token* Lexer::getNextToken() {
 	return token;
 }
 
-bool Lexer::isDigitOrDot(char c) {
+//
+bool Lexer::isDigitPrefix(char c) {
 	if (isdigit(c)) {
 		return true;
 	}
 
 	if (c == '.') {
+		return true;
+	}
+
+	// used for hex values
+	if (c == '$') {
+		return true;
+	}
+
+	// used for binary values
+	if (c == '%') {
 		return true;
 	}
 
@@ -203,11 +214,15 @@ Lexer::Token* Lexer::process_number() {
 	pos++;
 	while (pos < buflen) {
 		char c = ((char*)lpBuffer)[pos];
-		bool isValidNumber = c == '.' || c == 'x' || c == 'X' || isdigit(c) || isHexDigit(c);
+		bool isValidNumber = c == '.' || c == 'x' || c == 'X' || c == '_' || isdigit(c) || isHexDigit(c);
+		bool append = isValidNumber && c != '_';
 		if (!isValidNumber) {
 			break;
 		}
-		tok->name.push_back(c);
+		if (append) {
+			tok->name.push_back(c);
+		}
+
 		pos++;
 	}
 	tok->pos = pos;

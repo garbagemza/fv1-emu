@@ -51,7 +51,9 @@ enum Opcode {
 	WLDS,
 	CHO,		// only used by the parser, the interpreter does not recognize this opcode
 	CHO_RDA,
-
+	OR,
+	AND,
+	XOR
 };
 
 
@@ -119,7 +121,9 @@ class Parser {
 	unsigned int			getChoFlagsValueWithLine(vector<Lexer::Token*>& line);
 
 	BOOL					isChoFlag(string id);
-	BOOL					isHexValue(string id);
+	BOOL					isHexIntegerValue(string id);
+	BOOL					isHexS23Value(string id);
+	BOOL					isBinaryS23Value(string id);
 
 	FV1* fv1;
 

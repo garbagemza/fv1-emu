@@ -45,7 +45,7 @@ private:
 	bool hasNextToken();
 	bool isAlpha(char c);
 	bool isAlNum(char c);
-	bool isDigitOrDot(char c);
+	bool isDigitPrefix(char c);
 	bool isHexDigit(char c);
 
 	Token* getNextToken();

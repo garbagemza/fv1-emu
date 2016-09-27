@@ -213,6 +213,11 @@ public:
 	void wlds(LFOType osc, double frequencyCoefficient, double amplitudeCoefficient);
 	void cho_rda(Timer* timer, LFOType osc, unsigned int choFlags, MemoryAddress* memAddress);
 
+
+	void or(unsigned int value);
+	void and(unsigned int value);
+	void xor(unsigned int value);
+
 	// used for skip conditions
 	bool zrc();
 	bool zro();
