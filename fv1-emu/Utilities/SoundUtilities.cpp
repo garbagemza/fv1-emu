@@ -25,7 +25,7 @@ short* SoundUtilities::generateSamplesWithSignalGenerator(SignalGenerator* gener
 		for (unsigned int sample = 0; sample < dataSize; sample++) {
 			double t = (double)sample * 2.0 / (double)(44100 * 2);
 			double h = 8000.0 * sin(2.0 * M_PI * generator->frequency * t);
-			data[sample] = h;
+			data[sample] = (short)h;
 		}
 		return data;
 	}

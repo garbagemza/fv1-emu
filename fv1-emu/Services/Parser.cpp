@@ -55,7 +55,7 @@ BOOL Parser::PassOneParse(vector<vector<Lexer::Token*>> lines) {
 
 	for (vector<vector<Lexer::Token*>>::iterator it = lines.begin(); it != lines.end(); it++) {
 		vector<Lexer::Token*> v = (*it);
-		if (v.size() == 3) {
+		if (v.size() >= 3) {
 			Lexer::TOKEN_TYPE type = v[0]->type;
 			if (type == Lexer::TOKEN_TYPE::IDENTIFIER) {
 				string id = v[0]->name;
@@ -78,8 +78,20 @@ BOOL Parser::PassOneParse(vector<vector<Lexer::Token*>> lines) {
 						Param equ = Param();
 						equ.type = v[2]->type;
 						equ.value = v[2]->name;
+
 						if (v[2]->type == Lexer::TOKEN_TYPE::IDENTIFIER) {
 							equ.regAddress = fv1->getAddressOfIdentifier(v[2]->name);
+
+							map<string, Memory*>::iterator it = memMap.find(equ.value);
+							if (it != memMap.end()) {
+								vector<Lexer::Token*> line = v;
+								line.erase(line.begin());
+								line.erase(line.begin());
+								line.erase(line.begin());
+								MemoryAddress* memAddress = parseMemoryAddressWithLine(line, Start, (*it).second);
+								equ.memAddress = memAddress;
+							}
+
 						}
 						else if (v[2]->type == Lexer::TOKEN_TYPE::NUMBER) {
 							if (isHexS23Value(equ.value)) {
@@ -225,37 +237,12 @@ Param* Parser::GetParameter(vector<Lexer::Token*>& line, unsigned int currentIns
 				if (it != equMap.end()) {
 					Param param = (*it).second;
 					arg0->regAddress = param.regAddress;
+					arg0->memAddress = param.memAddress;
 				}
 			}
 			map<string, Memory*>::iterator it = memMap.find(arg0->value);
 			if (it != memMap.end()) {
-				MemoryAddress* memAddress = new MemoryAddress();
-				memAddress->mem = (*it).second;
-				memAddress->position = position;
-
-				// memory address found, look for any modifier to the memory address
-				if (line.size() > 1 && (line[0]->type == Lexer::TOKEN_TYPE::PLUS || line[0]->type == Lexer::TOKEN_TYPE::MINUS)) {
-					// there is a displacement here
-					bool negative = false;
-					if (line[0]->type == Lexer::TOKEN_TYPE::MINUS) {
-						// is negative
-						negative = true;
-					}
-					line.erase(line.begin()); // erase plus or minus token
-					if (line[0]->type == Lexer::TOKEN_TYPE::NUMBER) {
-						unsigned int displacement = 0;
-						STR2NUMBER_ERROR err = str2uint(displacement, line[0]->name.c_str());
-						if (err == SUCCESS) {
-							memAddress->displacement = negative ? displacement * -1 : displacement;
-						}
-
-						line.erase(line.begin()); // erase number
-					}
-					else {
-						throw exception("a number was expected to construct a displacement.");
-					}
-				}
-
+				MemoryAddress* memAddress = parseMemoryAddressWithLine(line, position, (*it).second);
 				arg0->memAddress = memAddress;
 			}
 
@@ -334,6 +321,37 @@ Param* Parser::GetParameter(vector<Lexer::Token*>& line, unsigned int currentIns
 		return arg0;
 	}
 	return NULL;
+}
+
+MemoryAddress* Parser::parseMemoryAddressWithLine(vector<Lexer::Token*>& line, MemoryPosition position, Memory* memory) {
+	MemoryAddress* memAddress = new MemoryAddress();
+	memAddress->mem = memory;
+	memAddress->position = position;
+
+	// memory address found, look for any modifier to the memory address
+	if (line.size() > 1 && (line[0]->type == Lexer::TOKEN_TYPE::PLUS || line[0]->type == Lexer::TOKEN_TYPE::MINUS)) {
+		// there is a displacement here
+		bool negative = false;
+		if (line[0]->type == Lexer::TOKEN_TYPE::MINUS) {
+			// is negative
+			negative = true;
+		}
+		line.erase(line.begin()); // erase plus or minus token
+		if (line[0]->type == Lexer::TOKEN_TYPE::NUMBER) {
+			unsigned int displacement = 0;
+			STR2NUMBER_ERROR err = str2uint(displacement, line[0]->name.c_str());
+			if (err == SUCCESS) {
+				memAddress->displacement = negative ? displacement * -1 : displacement;
+			}
+
+			line.erase(line.begin()); // erase number
+		}
+		else {
+			throw exception("a number was expected to construct a displacement.");
+		}
+	}
+
+	return memAddress;
 }
 
 MemoryPosition Parser::DirectionSpecificationWithType(Lexer::TOKEN_TYPE& type) {

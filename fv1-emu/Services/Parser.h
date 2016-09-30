@@ -119,7 +119,7 @@ class Parser {
 	Opcode					opcodeWithSecondaryOpcode(Opcode opcode, string subOpcode);
 	unsigned int			getChoFlagWithString(string id);
 	unsigned int			getChoFlagsValueWithLine(vector<Lexer::Token*>& line);
-
+	MemoryAddress*			parseMemoryAddressWithLine(vector<Lexer::Token*>& line, MemoryPosition pos, Memory* memory);
 	BOOL					isChoFlag(string id);
 	BOOL					isHexIntegerValue(string id);
 	BOOL					isHexS23Value(string id);
