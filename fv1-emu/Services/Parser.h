@@ -17,7 +17,7 @@ struct Param
 
 	// used for skp instruction
 	FV1::SkipCondition condition;
-	FV1::LFOType osc;
+	u32 osc;
 	unsigned int unsignedIntValue;
 
 	Param() {
@@ -49,17 +49,20 @@ enum Opcode {
 	WRLX,
 	WRHX,
 	WLDS,
+	WLDR = 0x12,
 	CHO,		// only used by the parser, the interpreter does not recognize this opcode
-	CHO_RDA,
 	OR,
 	AND,
-	XOR
+	XOR,
+	CHO_RDA = 0x50,
+	CHO_SOF = 0x51
 };
 
 
 struct Instruction
 {
 	Opcode opcode;
+	unsigned int rawValue;
 	Param* args[5];
 };
 
@@ -111,6 +114,8 @@ class Parser {
 	BOOL					isFirstPassStatement(vector<Lexer::Token*>);
 	SplitStatementInfo		shouldSplitStatements(vector<Lexer::Token*>);
 	BOOL					LoadInstructionWithInstructionLine(vector<Lexer::Token*>, unsigned int, Instruction*);
+	BOOL					loadWLDRWithInstructionLine(vector<Lexer::Token*>, unsigned int, Instruction*);
+
 	vector<Param*>			GetParameters(vector<Lexer::Token*> line, unsigned int);
 	Param*					GetParameter(vector<Lexer::Token*>& line, unsigned int);
 

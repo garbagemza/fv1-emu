@@ -19,6 +19,7 @@
 #include <map>
 #include <cassert>
 #include <tchar.h>
+#include <ctime>
 
 #pragma comment(lib, "Comctl32.lib")
 
@@ -567,13 +568,18 @@ BOOL SpinSoundDelegate::ExecuteInstruction(Instruction* inst, unsigned int index
 	break;
 	case WLDS:
 	{
-		FV1::LFOType osc = inst->args[0]->osc;
+		u32 osc = inst->args[0]->osc;
 		fv1->wlds(osc, inst->args[1]->doubleValue, inst->args[2]->doubleValue);
+		return true;
+	}
+	case WLDR:
+	{
+		fv1->wldr(inst->rawValue);
 		return true;
 	}
 	case CHO_RDA:
 	{
-		FV1::LFOType osc = inst->args[0]->osc;
+		u32 osc = inst->args[0]->osc;
 		unsigned int choFlags = inst->args[1]->unsignedIntValue;
 		MemoryAddress* memAddress = inst->args[2]->memAddress;
 		fv1->cho_rda(fv1Timer, osc, choFlags, memAddress);

@@ -89,6 +89,8 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Core\signed_fp.h" />
+    <ClInclude Include="Core\types.h" />
     <ClInclude Include="fv1-emu.h" />
     <ClInclude Include="Manager\AudioStreamManager.h" />
     <ClInclude Include="Manager\MemoryManager.h" />

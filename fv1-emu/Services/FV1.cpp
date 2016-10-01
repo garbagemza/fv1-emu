@@ -125,7 +125,7 @@ void FV1::wrhx(double* reg_addr, double coefficient) {
 	acc = tmpAcc;
 }
 
-void FV1::wlds(LFOType osc, double Kf, double Ka) {
+void FV1::wlds(u32 osc, double Kf, double Ka) {
 	switch (osc) {
 	case SIN0:
 		sin0_rate = Kf * (double)FV1_SAMPLE_RATE / (131072.0 * 2.0 * M_PI);
@@ -141,10 +141,34 @@ void FV1::wlds(LFOType osc, double Kf, double Ka) {
 	}
 }
 
+// 160 ms(t*640000 iterations)
+// *25ms (isolated)
+void FV1::wldr(u32 instruction) {
+	u32 amp = (instruction & 0x60) >> 5;
+	u32 ampValue = 512 << amp; 
+
+	i16 freq = (instruction & 0x1FFFE000) >> 13;
+	u32 osc = (instruction & 0x20000000) >> 29;
+
+	switch (osc) {
+	case RMP0:
+		rmp0_rate = (double)freq / 32768.0;
+		rmp0_range = ampValue;
+		break;
+	case RMP1:
+		rmp1_rate = (double)freq / 32768.0;
+		rmp1_range = ampValue;
+		break;
+	default:
+		assert(false); // invalid LFO type
+	}
+	return;
+}
+
 // for now the coefficient will be 0.5, in the original chip the 
 // interpolation coefficient is taken from the calculation of the
 // sine/cosine.
-void FV1::cho_rda(Timer* timer, LFOType osc, unsigned int choFlags, MemoryAddress* memAddress) {
+void FV1::cho_rda(Timer* timer, u32 osc, unsigned int choFlags, MemoryAddress* memAddress) {
 
 	double rate = 0.0;
 	double amplitude = 0;
@@ -371,7 +395,7 @@ FV1::SkipCondition FV1::conditionWithIdentifier(string id) {
 	return FV1::UNKNOWN;
 }
 
-FV1::LFOType FV1::oscillatorWithIdentifier(string id) {
+u32 FV1::oscillatorWithIdentifier(string id) {
 	const char* str = id.c_str();
 	if (_stricmp(str, "sin0") == 0) {
 		return FV1::SIN0;

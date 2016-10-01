@@ -69,6 +69,12 @@
     <ClInclude Include="Manager\AudioStreamManager.h">
       <Filter>Manager</Filter>
     </ClInclude>
+    <ClInclude Include="Core\types.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\signed_fp.h">
+      <Filter>Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="fv1-emu.ico">
@@ -93,6 +99,9 @@
     </Filter>
     <Filter Include="Resources">
       <UniqueIdentifier>{d9654282-2198-483e-bd32-decf118e5cf9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core">
+      <UniqueIdentifier>{cec5b2ec-0cfe-4316-8741-8b1ad39de3bb}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

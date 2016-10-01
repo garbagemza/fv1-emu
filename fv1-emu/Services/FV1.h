@@ -1,5 +1,7 @@
 #pragma once
 #include <string>
+#include "..\Core\types.h"
+
 using namespace std;
 
 #define FV1_SAMPLE_RATE 32768
@@ -31,13 +33,6 @@ public:
 		ZRO,
 		GEZ,
 		NEG
-	};
-
-	enum LFOType {
-		SIN0,
-		SIN1,
-		RMP0,
-		RMP1
 	};
 
 	enum Register {
@@ -87,6 +82,13 @@ public:
 		REG31,
 
 	};
+
+	const static u32 SIN0 = 0;
+	const static u32 SIN1 = 1;
+	const static u32 RMP0 = 0;
+	const static u32 RMP1 = 1;
+	
+
 	double pacc;
 	double acc;
 	double lr;
@@ -138,10 +140,13 @@ public:
 	// oscillators
 	double sin0_rate;
 	double sin1_rate;
+	double rmp0_rate;
+	double rmp1_rate;
 
 	double sin0_range;
 	double sin1_range;
-
+	double rmp0_range;
+	double rmp1_range;
 	FV1() {
 		pacc = 0;
 		acc = 0;
@@ -191,6 +196,10 @@ public:
 		sin1_rate = 0.0;
 		sin0_range = 0;
 		sin1_range = 0;
+		rmp0_rate = 0.0;
+		rmp1_rate = 0.0;
+		rmp0_range = 0.0;
+		rmp1_range = 0.0;
 	}
 
 	void mem(Memory** addr, unsigned int size);
@@ -210,8 +219,9 @@ public:
 	void absa();
 	void wrlx(double* reg_addr, double coefficient);
 	void wrhx(double* reg_addr, double coefficient);
-	void wlds(LFOType osc, double frequencyCoefficient, double amplitudeCoefficient);
-	void cho_rda(Timer* timer, LFOType osc, unsigned int choFlags, MemoryAddress* memAddress);
+	void wlds(u32 osc, double frequencyCoefficient, double amplitudeCoefficient);
+	void wldr(u32 instruction);
+	void cho_rda(Timer* timer, u32 osc, unsigned int choFlags, MemoryAddress* memAddress);
 
 
 	void or(unsigned int value);
@@ -230,7 +240,7 @@ public:
 
 	double* getAddressOfIdentifier(string id);
 	SkipCondition conditionWithIdentifier(string id);
-	LFOType oscillatorWithIdentifier(string id);
+	u32 oscillatorWithIdentifier(string id);
 	double* getRegisterAddressWithName(string name);
 	
 };

@@ -6,6 +6,7 @@
 
 #include <cassert>
 #include <Windows.h>
+#include "..\Core\types.h"
 
 Parser::Parser(FV1* fv1) {
 	this->fv1 = fv1;
@@ -156,11 +157,15 @@ BOOL Parser::LoadInstructionWithInstructionLine(vector<Lexer::Token*> line, unsi
 		if (type == Lexer::TOKEN_TYPE::IDENTIFIER) {
 			string inst = line[0]->name;
 			Opcode opcode = InstructionOpcodeWithString(inst);
-			if (opcode != UNKNOWN) {
+			if (opcode == WLDR) {
+				line.erase(line.begin() + 0);
+				return loadWLDRWithInstructionLine(line, currentInstruction, instruction);
+			}
+			else if (opcode != UNKNOWN) {
 				line.erase(line.begin() + 0); // remove first element
 				instruction->opcode = opcode;
 				vector<Param*> params = GetParameters(line, currentInstruction);
-				if (params.size()) {
+				if (params.size() > 0) {
 					if (opcode == CHO) {
 						// get first parameter to complete the opcode, and remove it from the parameter list.
 						instruction->opcode = opcodeWithSecondaryOpcode(opcode, params[0]->value);
@@ -184,31 +189,76 @@ BOOL Parser::LoadInstructionWithInstructionLine(vector<Lexer::Token*> line, unsi
 	return false;
 }
 
+BOOL Parser::loadWLDRWithInstructionLine(vector<Lexer::Token*> line, unsigned int currentInstructionNumber, Instruction* instruction) {
+
+	u32 inst = WLDR;
+	instruction->opcode = WLDR;
+	Param* lfo = GetParameter(line, currentInstructionNumber);
+	if (lfo != NULL) {
+		u32 rampLFONumber = lfo->unsignedIntValue;
+		if (rampLFONumber < 2) {
+			inst |= (rampLFONumber << 29);
+
+			Param* frequencyParam = GetParameter(line, currentInstructionNumber);
+			if (frequencyParam != NULL) {
+				i32 freq = static_cast<i32>(frequencyParam->doubleValue);
+				if (freq >= -16384 && freq <= 32767) {
+					freq &= 0xFFFF;
+					inst |= (freq << 13);
+
+					Param* amplitudeParam = GetParameter(line, currentInstructionNumber);
+					if (amplitudeParam != NULL) {
+
+						u32 amp = static_cast<u32>(amplitudeParam->doubleValue);
+						u32 amplitudeBits = 0; // 512 is default
+						switch (amp) {
+						case 512: amplitudeBits = 0; break;
+						case 1024: amplitudeBits = 1; break;
+						case 2048: amplitudeBits = 2; break;
+						case 4096: amplitudeBits = 3; break;
+						default:
+							return false; // invalid value, accepted (512, 1024, 2048, 4096);
+						}
+
+						inst |= (amplitudeBits << 5);
+						instruction->rawValue = inst;
+
+						
+						return true;
+					}
+					else
+						return false; // amplitude parameter expected
+				}
+				else
+					return false; // invalid range, accepted (-16384 .. 32767)
+			}
+			return false; // frequency parameter expected
+
+		}
+		else
+			return false; // invalid value, accepted 0..1
+	}
+
+	return false;
+}
 vector<Param*> Parser::GetParameters(vector<Lexer::Token*> line, unsigned int currentInstruction) {
 	vector<Param*> parameters;
 	Param* param = GetParameter(line, currentInstruction);
 	if (param != NULL) {
 		parameters.push_back(param);
-		if (line.size() > 0) {
-			Lexer::TOKEN_TYPE type = line[0]->type;
-			if (type == Lexer::TOKEN_TYPE::COMMA) {
-				line.erase(line.begin() + 0); // remove comma
-				vector<Param*> params = GetParameters(line, currentInstruction);
-				if (params.size() > 0) {
-					parameters.insert(parameters.end(), params.begin(), params.end());
-				}
-			}
+		vector<Param*> params = GetParameters(line, currentInstruction);
+		if (params.size() > 0) {
+			parameters.insert(parameters.end(), params.begin(), params.end());
 		}
-	}
-	
+	}	
 	return parameters;
 }
 
 Param* Parser::GetParameter(vector<Lexer::Token*>& line, unsigned int currentInstruction) {
+	Param* arg0 = new Param();
 	if (line.size() > 0) {
 		MemoryPosition position = Start;
 		bool negative = false;
-		Param* arg0 = new Param();
 		
 		// first is optional
 		if (line[0]->type == Lexer::TOKEN_TYPE::MINUS) {
@@ -249,6 +299,7 @@ Param* Parser::GetParameter(vector<Lexer::Token*>& line, unsigned int currentIns
 			if (arg0->regAddress == NULL && arg0->memAddress == NULL) {
 				arg0->condition = fv1->conditionWithIdentifier(arg0->value);
 				arg0->osc = fv1->oscillatorWithIdentifier(arg0->value);
+				arg0->unsignedIntValue = arg0->osc;
 			}
 
 			map<string, Param>::iterator it3 = equMap.find(arg0->value);
@@ -311,6 +362,7 @@ Param* Parser::GetParameter(vector<Lexer::Token*>& line, unsigned int currentIns
 				STR2NUMBER_ERROR err = str2dble(coefficient, line[0]->name.c_str());
 				if (err == SUCCESS) {
 					arg0->doubleValue = negative ? coefficient * -1.0 : coefficient;
+					arg0->unsignedIntValue = static_cast<u32>(arg0->doubleValue);
 				}
 			}
 			line.erase(line.begin()); // erase number
@@ -318,6 +370,14 @@ Param* Parser::GetParameter(vector<Lexer::Token*>& line, unsigned int currentIns
 		else {
 			throw exception("Invalid parameter type");
 		}
+
+		if (line.size() > 0) {
+			Lexer::TOKEN_TYPE type = line[0]->type;
+			if (type == Lexer::TOKEN_TYPE::COMMA) {
+				line.erase(line.begin() + 0); // remove comma
+			}
+		}
+
 		return arg0;
 	}
 	return NULL;
@@ -430,6 +490,9 @@ Opcode Parser::InstructionOpcodeWithString(string& instruction) {
 	else if (_stricmp(instruction.c_str(), "wlds") == 0) {
 		return WLDS;
 	}
+	else if (_stricmp(instruction.c_str(), "wldr") == 0) {
+		return WLDR;
+	}
 	else if (_stricmp(instruction.c_str(), "cho") == 0) {
 		return CHO;
 	}
@@ -525,6 +588,9 @@ Opcode Parser::opcodeWithSecondaryOpcode(Opcode opcode, string subOpcode) {
 	if (opcode == CHO) {
 		if (_stricmp(subOpcode.c_str(), "rda") == 0) {
 			return CHO_RDA;
+		}
+		else if (_stricmp(subOpcode.c_str(), "sof") == 0) {
+			return CHO_SOF;
 		}
 	}
 

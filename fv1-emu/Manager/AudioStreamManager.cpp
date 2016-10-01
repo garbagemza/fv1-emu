@@ -60,6 +60,10 @@ int AudioStreamManager::readStreamCallback(const void *inputBuffer, void *output
 			SAMPLE right = *in++;
 
 			GetSampleResult result = soundDelegate->getSample(left, right, sampleNumber++);
+			//for (int i = 0; i < 10000; i++) {
+			//	result = soundDelegate->getSample(left, right, sampleNumber);
+			//}
+
 			if (result == Abort) {
 				return paAbort;
 			}
@@ -68,8 +72,8 @@ int AudioStreamManager::readStreamCallback(const void *inputBuffer, void *output
 		}
 
 		//clock_t end = clock();
-		//double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
-		//printf("Elapsed time: %f seconds", elapsed_secs);
+		//double elapsed_millis = (double(end - begin) / CLOCKS_PER_SEC) * 1000.0;
+		//printf("Elapsed time: %f milliseconds", elapsed_millis);
 
 	}
 
