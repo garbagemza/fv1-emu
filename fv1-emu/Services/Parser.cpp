@@ -349,9 +349,12 @@ MemoryAddress* Parser::parseMemoryAddressWithLine(vector<Lexer::Token*>& line, M
 		else if (line[0]->type == Lexer::TOKEN_TYPE::IDENTIFIER) {
 			// displacement may be a constant declared before
 			map<string, Param>::iterator it = equMap.find(line[0]->name);
-			if (it != equMap.end()) {
+			if (it != equMap.end() && (*it).second.type == Lexer::TOKEN_TYPE::NUMBER) {
 				Param param = (*it).second;
 				memAddress->displacement = static_cast<int>(param.doubleValue);
+			}
+			else {
+				throw exception("constant expected");
 			}
 
 			line.erase(line.begin());
