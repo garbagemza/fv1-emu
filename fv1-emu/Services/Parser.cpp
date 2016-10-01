@@ -346,6 +346,16 @@ MemoryAddress* Parser::parseMemoryAddressWithLine(vector<Lexer::Token*>& line, M
 
 			line.erase(line.begin()); // erase number
 		}
+		else if (line[0]->type == Lexer::TOKEN_TYPE::IDENTIFIER) {
+			// displacement may be a constant declared before
+			map<string, Param>::iterator it = equMap.find(line[0]->name);
+			if (it != equMap.end()) {
+				Param param = (*it).second;
+				memAddress->displacement = static_cast<int>(param.doubleValue);
+			}
+
+			line.erase(line.begin());
+		}
 		else {
 			throw exception("a number was expected to construct a displacement.");
 		}
