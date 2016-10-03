@@ -85,8 +85,8 @@ public:
 
 	const static u32 SIN0 = 0;
 	const static u32 SIN1 = 1;
-	const static u32 RMP0 = 0;
-	const static u32 RMP1 = 1;
+	const static u32 RMP0 = 2;
+	const static u32 RMP1 = 3;
 	
 
 	double pacc;
@@ -138,6 +138,7 @@ public:
 	double reg31;
 
 	// oscillators
+	double osc_reg = 0; // internal register
 	double sin0_rate;
 	double sin1_rate;
 	double rmp0_rate;
@@ -145,8 +146,9 @@ public:
 
 	double sin0_range;
 	double sin1_range;
-	double rmp0_range;
-	double rmp1_range;
+	u32 rmp0_range;
+	u32 rmp1_range;
+
 	FV1() {
 		pacc = 0;
 		acc = 0;
@@ -198,8 +200,8 @@ public:
 		sin1_range = 0;
 		rmp0_rate = 0.0;
 		rmp1_rate = 0.0;
-		rmp0_range = 0.0;
-		rmp1_range = 0.0;
+		rmp0_range = 0;
+		rmp1_range = 0;
 	}
 
 	void mem(Memory** addr, unsigned int size);
@@ -221,8 +223,7 @@ public:
 	void wrhx(double* reg_addr, double coefficient);
 	void wlds(u32 osc, double frequencyCoefficient, double amplitudeCoefficient);
 	void wldr(u32 instruction);
-	void cho_rda(Timer* timer, u32 osc, unsigned int choFlags, MemoryAddress* memAddress);
-
+	void cho(Timer* timer, MemoryAddress* memAddress, u32 instruction);
 
 	void or(unsigned int value);
 	void and(unsigned int value);
@@ -236,8 +237,8 @@ public:
 
 	// misc
 	void updm(Memory* mem);
-	int displacementWithLFO(Timer* timer, int flags, double rate, double amplitude);
-
+	int displacementWithLFO(Timer* timer, double& coefficient, int flags, double rate, double amplitude);
+	double xfadeCoefficientWithRange(u32 sample, u32 range);
 	double* getAddressOfIdentifier(string id);
 	SkipCondition conditionWithIdentifier(string id);
 	u32 oscillatorWithIdentifier(string id);

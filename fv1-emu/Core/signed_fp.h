@@ -5,9 +5,17 @@ template <size_t IntegerBitCount, size_t FractionalBitCount>
 class signed_fp
 {
 	// TODO: put static
-	const unsigned int signMask = 1 << (IntegerBitCount + FractionalBitCount);
-	const unsigned int factor = (1 << FractionalBitCount);
+	const u32 signBit = (1 << (IntegerBitCount + FractionalBitCount));
+	const u32 signMask = setSignMask(32 - (IntegerBitCount + FractionalBitCount + 1));
+	const u32 factor = (1 << FractionalBitCount);
 
+	static inline u32 setSignMask(int bitNum) {
+		u32 x = 0;
+		for (int i = 31; i >= bitNum; i--)
+			x |= (1L << i);
+
+		return x;
+	}
 	i32 data;
 
 public:
@@ -16,17 +24,25 @@ public:
 		*this = 0.0;
 	}
 
-	signed_fp(f32 d)
+	signed_fp(i32 packed) {
+		// extend sign if the packed value is negative
+		bool isNegative = (packed & signBit) != 0;
+		if (isNegative) {
+			packed |= signMask;
+		}
+		data = packed;
+	}
+	signed_fp(f64 d)
 	{
 		*this = d; // calls operator=
 	}
 
-	signed_fp& operator=(f32 d)
+	signed_fp& operator=(f64 d)
 	{
-		//i32 min = -2 ^ (IntegerBitCount);
-		//i32 max = 2 ^ (IntegerBitCount)- 2 ^ -(FractionalBitCount);
-		//-1.0 and 1 − 2^−(N - 1), when N is number of bits
-		i32 intPart = static_cast<i32>(d);
+		double min = -pow(2.0, (double)(IntegerBitCount));
+		double max = pow(2.0, (double)(IntegerBitCount)) - pow(2.0, -(double)(FractionalBitCount));
+		if (d < min) d = min;
+		if (d > max) d = max;
 
 		data = (i32)floor(d * factor + 0.5);
 		return *this;
@@ -37,8 +53,8 @@ public:
 		return data;
 	}
 
-	f32 doubleValue() {
-		return (f32)data / (f32)factor;
+	f64 doubleValue() {
+		return (f64)data / (f64)factor;
 	}
 	// Other operators can be defined here
 };

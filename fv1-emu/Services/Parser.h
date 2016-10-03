@@ -50,12 +50,13 @@ enum Opcode {
 	WRHX,
 	WLDS,
 	WLDR = 0x12,
-	CHO,		// only used by the parser, the interpreter does not recognize this opcode
+	CHO = 0x14,
 	OR,
 	AND,
 	XOR,
 	CHO_RDA = 0x50,
-	CHO_SOF = 0x51
+	CHO_SOF = 0x51,
+	CHO_RDAL = 0x52
 };
 
 
@@ -63,6 +64,8 @@ struct Instruction
 {
 	Opcode opcode;
 	unsigned int rawValue;
+	MemoryAddress* memAddress;
+
 	Param* args[5];
 };
 
@@ -115,6 +118,7 @@ class Parser {
 	SplitStatementInfo		shouldSplitStatements(vector<Lexer::Token*>);
 	BOOL					LoadInstructionWithInstructionLine(vector<Lexer::Token*>, unsigned int, Instruction*);
 	BOOL					loadWLDRWithInstructionLine(vector<Lexer::Token*>, unsigned int, Instruction*);
+	BOOL					loadCHOWithInstructionLine(vector<Lexer::Token*>, unsigned int, Instruction*);
 
 	vector<Param*>			GetParameters(vector<Lexer::Token*> line, unsigned int);
 	Param*					GetParameter(vector<Lexer::Token*>& line, unsigned int);

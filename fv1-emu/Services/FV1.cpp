@@ -3,7 +3,7 @@
 #include "..\Manager\TimerManager.h"
 #include "..\Utilities\MathUtils.h"
 #include "..\Utilities\SoundUtilities.h"
-
+#include "..\Core\signed_fp.h"
 #include <cassert>
 
 #define _USE_MATH_DEFINES
@@ -151,11 +151,11 @@ void FV1::wldr(u32 instruction) {
 	u32 osc = (instruction & 0x20000000) >> 29;
 
 	switch (osc) {
-	case RMP0:
+	case 0:
 		rmp0_rate = (double)freq / 32768.0;
 		rmp0_range = ampValue;
 		break;
-	case RMP1:
+	case 1:
 		rmp1_rate = (double)freq / 32768.0;
 		rmp1_range = ampValue;
 		break;
@@ -165,32 +165,67 @@ void FV1::wldr(u32 instruction) {
 	return;
 }
 
-// for now the coefficient will be 0.5, in the original chip the 
-// interpolation coefficient is taken from the calculation of the
-// sine/cosine.
-void FV1::cho_rda(Timer* timer, u32 osc, unsigned int choFlags, MemoryAddress* memAddress) {
 
+void FV1::cho(Timer* timer, MemoryAddress* memAddress, u32 instruction) {
+	u32 osc = (instruction & 0x600000) >> 21;
+	u32 flags = (instruction & 0x3F000000) >> 24;
+	i32 constant = (instruction & 0x1FFFE0) >> 5;
+	u32 subOperation = (instruction & 0xC0000000) >> 30;
+
+	bool isRampOscillator = osc == RMP0 || osc == RMP1;
+	bool isSinOscillator = osc == SIN0 || osc == SIN1;
+
+	bool cos = (flags & 0x01) != 0;
+	bool reg = (flags & 0x02) != 0;
+	bool complementCoefficient = (flags & 0x04) != 0;
+	bool compa = (flags & 0x08) != 0;
+	bool rptr2 = (flags & 0x10) != 0;
+	bool selectCrossfadeCoefficient = (flags & 0x20) != 0;
+	double coefficient = 0.5;
 	double rate = 0.0;
-	double amplitude = 0;
+	double amplitude = 0.0;
 
-	if (osc == SIN0) {
-		rate = sin0_rate;
-		amplitude = sin0_range / 2.0;
+	if (selectCrossfadeCoefficient && isRampOscillator) {
+		u32 range = osc == RMP0 ? rmp0_range : rmp1_range;
+		double rate = osc == RMP0 ? rmp0_rate : rmp1_rate;
+		coefficient = xfadeCoefficientWithRange(timer->sample, range);
 	}
-	else if (osc == SIN1) {
-		rate = sin1_rate;
-		amplitude = sin1_range / 2.0;
-	}
-	else if (osc == RMP0) {
-		assert(false);// not implemented yet
-	}
-	else if (osc == RMP1) {
-		assert(false);// not implemented yet
+	if (isSinOscillator) {
+		if (osc == SIN0) {
+			rate = sin0_rate;
+			amplitude = sin0_range / 2.0;
+		}
+		else if (osc == SIN1) {
+			rate = sin1_rate;
+			amplitude = sin1_range / 2.0;
+		}
 	}
 
-	memAddress->lfoDisplacement = displacementWithLFO(timer, choFlags, rate, amplitude);
+	if (complementCoefficient) {
+		coefficient = 1.0 - coefficient;
+	}
 
-	rda(memAddress, 0.5);
+	switch (subOperation)
+	{
+	case 0: // rda
+		{
+			memAddress->lfoDisplacement = displacementWithLFO(timer, coefficient, flags, rate, amplitude);
+			rda(memAddress, coefficient);
+		}
+		break;
+	case 2: // sof
+		{
+			double offset = signed_fp<0, 15>(constant).doubleValue();
+			sof(coefficient, offset);
+		}
+		break;
+	case 3: // rdal
+		assert(false); // not implemented yet
+		break;
+	default:
+		assert(false); // not implemented yet
+		break;
+	}
 }
 
 void FV1::or(unsigned int value) {
@@ -415,21 +450,45 @@ u32 FV1::oscillatorWithIdentifier(string id) {
 }
 
 // use SIN oscillator as default, this changes if COS is included in flags.
-int FV1::displacementWithLFO(Timer* timer, int choFlags, double rate, double amplitude) {
+int FV1::displacementWithLFO(Timer* timer, double& coefficient, int choFlags, double rate, double amplitude) {
 	bool useCosineInsteadSin = false;
 	bool saveToRegister = false;
+	double w = 2.0 * M_PI * rate;
 
 	if (choFlags & CHOFlags::COS) {
 		useCosineInsteadSin = true;
 	}
 
 	if (choFlags & CHOFlags::REG) {
-		saveToRegister = true;
+		osc_reg = useCosineInsteadSin ? cos(w * timer->t) : sin(w * timer->t);
 	}
 
-	double w = 2.0 * M_PI * rate;
-
-	double sincos = useCosineInsteadSin ? cos(w * timer->t) : sin(w * timer->t);
-	int displacement = (int)(floor(sincos * amplitude));
+	double displacementDouble = osc_reg * amplitude;
+	int displacement = static_cast<i32>(displacementDouble);
+	coefficient = displacementDouble - (double)displacement;
+	coefficient = choFlags & CHOFlags::COMPC ? 1.0 - coefficient : coefficient;
 	return displacement;
+}
+
+double FV1::xfadeCoefficientWithRange(u32 sampleNumber, u32 range) {
+
+	u32 x = sampleNumber % range; // get number between 0 and range
+	u32 quarter = range >> 2;
+	u32 octave = range >> 3;
+	double m = 1.0 / (double)quarter;
+	if (x >= 0 && x < octave) {
+		return 0.0;
+	}
+	else if (x >= octave && x < (octave + quarter)) {
+		return m*(x - octave);
+	}
+	else if (x >= (octave + quarter) && x < (octave + 2 * quarter)) {
+		return 1.0;
+	}
+	else if (x >= (octave + 2 * quarter) && x < (octave + 3 * quarter)) {
+		return -m*(x - (2*quarter + octave)) + 1.0;
+	}
+	else {
+		return 0.0;
+	}
 }

@@ -337,7 +337,7 @@ HWND WINAPI CreateTrackbar(
 
 void SpinSoundDelegate::willBeginPlay() {
 
-	generator = SoundUtilities::createSignalGenerator(SignalType::Sinusoidal, 1000.0);
+	generator = SoundUtilities::createSignalGenerator(SignalType::Sinusoidal, 400.0);
 	timer = TimerManager::createTimer(44100);
 	fv1Timer = TimerManager::createTimer(FV1_SAMPLE_RATE);
 
@@ -410,6 +410,7 @@ GetSampleResult SpinSoundDelegate::getSample(float& left, float& right, unsigned
 	// updates t based on main sample rate frequency.
 	TimerManager::updateTimerWithTimer(fv1Timer, timer);
 
+	//double leftright = 0.707 * SoundUtilities::sampleWithTime(generator, timer);
 	fv1->adcl = left;
 	fv1->adcr = right;
 		
@@ -577,13 +578,9 @@ BOOL SpinSoundDelegate::ExecuteInstruction(Instruction* inst, unsigned int index
 		fv1->wldr(inst->rawValue);
 		return true;
 	}
-	case CHO_RDA:
+	case CHO:
 	{
-		u32 osc = inst->args[0]->osc;
-		unsigned int choFlags = inst->args[1]->unsignedIntValue;
-		MemoryAddress* memAddress = inst->args[2]->memAddress;
-		fv1->cho_rda(fv1Timer, osc, choFlags, memAddress);
-
+		fv1->cho(fv1Timer, inst->memAddress, inst->rawValue);
 		return true;
 	}
 	case OR:
