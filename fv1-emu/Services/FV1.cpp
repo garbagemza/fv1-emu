@@ -152,11 +152,11 @@ void FV1::wldr(u32 instruction) {
 
 	switch (osc) {
 	case 0:
-		rmp0_rate = (double)freq / 32768.0;
+		rmp0_rate = freq;
 		rmp0_range = ampValue;
 		break;
 	case 1:
-		rmp1_rate = (double)freq / 32768.0;
+		rmp1_rate = freq;
 		rmp1_range = ampValue;
 		break;
 	default:
@@ -167,49 +167,78 @@ void FV1::wldr(u32 instruction) {
 
 
 void FV1::cho(Timer* timer, MemoryAddress* memAddress, u32 instruction) {
+
 	u32 osc = (instruction & 0x600000) >> 21;
 	u32 flags = (instruction & 0x3F000000) >> 24;
 	i32 constant = (instruction & 0x1FFFE0) >> 5;
 	u32 subOperation = (instruction & 0xC0000000) >> 30;
+	i32 displacement = 0;
+	u32 range = 0;
 
 	bool isRampOscillator = osc == RMP0 || osc == RMP1;
 	bool isSinOscillator = osc == SIN0 || osc == SIN1;
 
-	bool cos = (flags & 0x01) != 0;
+	bool cosine = (flags & 0x01) != 0;
 	bool reg = (flags & 0x02) != 0;
-	bool complementCoefficient = (flags & 0x04) != 0;
+	bool compc = (flags & 0x04) != 0;
 	bool compa = (flags & 0x08) != 0;
 	bool rptr2 = (flags & 0x10) != 0;
-	bool selectCrossfadeCoefficient = (flags & 0x20) != 0;
+	bool na = (flags & 0x20) != 0;
 	double coefficient = 0.5;
 	double rate = 0.0;
-	double amplitude = 0.0;
+	i32 rampRate = 0;
 
-	if (selectCrossfadeCoefficient && isRampOscillator) {
-		u32 range = osc == RMP0 ? rmp0_range : rmp1_range;
-		double rate = osc == RMP0 ? rmp0_rate : rmp1_rate;
-		coefficient = xfadeCoefficientWithRange(timer->sample, range);
+	assert(!compa); // not implemented yet
+
+	if (isRampOscillator) {
+		range = osc == RMP0 ? rmp0_range : rmp1_range;
+		rampRate = osc == RMP0 ? rmp0_rate : rmp1_rate;
 	}
 	if (isSinOscillator) {
-		if (osc == SIN0) {
-			rate = sin0_rate;
-			amplitude = sin0_range / 2.0;
+		rate = osc == SIN0 ? sin0_rate : sin1_rate;
+		range = osc == SIN0 ? static_cast<u32>(sin0_range / 2.0) : static_cast<u32>(sin1_range / 2.0);
+	}
+
+	double w = 2.0 * M_PI * rate;
+
+	if (reg) {
+		if (isSinOscillator) {
+			osc_reg = cosine ? cos(w * timer->t) : sin(w * timer->t);
 		}
-		else if (osc == SIN1) {
-			rate = sin1_rate;
-			amplitude = sin1_range / 2.0;
+		else if (isRampOscillator) {
+			double xrate = (double)rampRate / 32768.0;
+			double x = (double)(timer->sample % range) / (double)range;
+			osc_reg = x * xrate;
+			
 		}
 	}
 
-	if (complementCoefficient) {
+	if (rptr2) {
+		double xrate = (double)rampRate / 32768.0;;
+		double xrptr2 = (double)((timer->sample + range / 2) % range) / (double)range;
+		osc_reg = xrptr2 * xrate;
+	}
+
+	if (na) {
+		coefficient = xfadeCoefficientWithRange(timer->sample, range);
+		assert(coefficient >= 0.0 && coefficient <= 1.0); // invalid coefficient
+	}
+	else {
+		double displacementDouble = osc_reg * (double)range;
+		displacement = static_cast<i32>(displacementDouble);
+		coefficient = displacementDouble - (double)displacement;
+	}
+
+	if (compc) {
 		coefficient = 1.0 - coefficient;
 	}
+
 
 	switch (subOperation)
 	{
 	case 0: // rda
 		{
-			memAddress->lfoDisplacement = displacementWithLFO(timer, coefficient, flags, rate, amplitude);
+			memAddress->lfoDisplacement = displacement;
 			rda(memAddress, coefficient);
 		}
 		break;
@@ -491,4 +520,52 @@ double FV1::xfadeCoefficientWithRange(u32 sampleNumber, u32 range) {
 	else {
 		return 0.0;
 	}
+}
+
+double FV1::xfadeCoefficientWithRange2(u32 sampleNumber, u32 range) {
+	i32 x = sampleNumber % range; // get number between 0 and range
+	i32 quarter = range >> 2;
+	i32 octave = range >> 3;
+	double m = 1.0 / (double)octave;
+	if (x >= 0 && x < octave) {
+		return 0.0;
+	}
+	else if (x >= octave && x < quarter) {
+		return m*(x - octave);
+	}
+	else if (x >= quarter && x < 3 * quarter) {
+		return 1.0;
+	}
+	else if (x >= 3 * quarter && x < (octave + 3 * quarter)) {
+		return -m * (double)(x - (octave + 3 * quarter));
+	}
+	else {
+		return 0.0;
+	}
+	
+}
+
+double FV1::xfadeCoefficientWithRange3(u32 sampleNumber, u32 range) {
+	i32 x = sampleNumber % range; // get number between 0 and range
+	i32 quarter = range >> 2;
+	i32 octave = range >> 3;
+	i32 sixtieth = range >> 4;
+
+	double m = 1.0 / (double)sixtieth;
+	if (x >= 0 && x < octave) {
+		return 0.0;
+	}
+	else if (x >= octave && x < (octave + sixtieth)) {
+		return m*(x - (octave + sixtieth));
+	}
+	else if (x >= (octave + sixtieth) && x < (sixtieth + 3 * quarter)) {
+		return 1.0;
+	}
+	else if (x >= (sixtieth + 3 * quarter) && x < (octave + 3 * quarter)) {
+		return -m * (double)(x - (octave + 3 * quarter));
+	}
+	else {
+		return 0.0;
+	}
+
 }

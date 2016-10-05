@@ -1,5 +1,6 @@
 #include <Windows.h>
 #include "MemoryManager.h"
+#include "..\Core\types.h"
 
 Memory* MemoryManager::createMemory(unsigned int size) {
 
@@ -19,13 +20,13 @@ Memory* MemoryManager::createMemory(unsigned int size) {
 }
 
 double MemoryManager::getValueAtEnd(MemoryAddress* mem) {
-	unsigned int index = mem->mem->tail_index + mem->displacement;
-	index = index % mem->mem->size;
+	i32 index = mem->mem->tail_index + mem->displacement + mem->lfoDisplacement;
+	index = index >= 0 ? index % mem->mem->size : mem->mem->size + index;
 	return mem->mem->start_ptr[index];
 }
 
 double MemoryManager::getValueAtStart(MemoryAddress* mem) {
-	unsigned int index = mem->mem->head_index + mem->displacement;
+	unsigned int index = mem->mem->head_index + mem->displacement + mem->lfoDisplacement;
 	index = index % mem->mem->size;
 	return mem->mem->start_ptr[index];
 }

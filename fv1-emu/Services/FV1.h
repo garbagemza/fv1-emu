@@ -138,11 +138,13 @@ public:
 	double reg31;
 
 	// oscillators
-	double osc_reg = 0; // internal register
+	double osc_reg = 0.0; // internal register
+	i32 rmp_reg = 0;
+
 	double sin0_rate;
 	double sin1_rate;
-	double rmp0_rate;
-	double rmp1_rate;
+	i32 rmp0_rate;
+	i32 rmp1_rate;
 
 	double sin0_range;
 	double sin1_range;
@@ -198,8 +200,8 @@ public:
 		sin1_rate = 0.0;
 		sin0_range = 0;
 		sin1_range = 0;
-		rmp0_rate = 0.0;
-		rmp1_rate = 0.0;
+		rmp0_rate = 0;
+		rmp1_rate = 0;
 		rmp0_range = 0;
 		rmp1_range = 0;
 	}
@@ -239,6 +241,8 @@ public:
 	void updm(Memory* mem);
 	int displacementWithLFO(Timer* timer, double& coefficient, int flags, double rate, double amplitude);
 	double xfadeCoefficientWithRange(u32 sample, u32 range);
+	double xfadeCoefficientWithRange2(u32 sample, u32 range);
+	double xfadeCoefficientWithRange3(u32 sample, u32 range);
 	double* getAddressOfIdentifier(string id);
 	SkipCondition conditionWithIdentifier(string id);
 	u32 oscillatorWithIdentifier(string id);
