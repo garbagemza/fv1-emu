@@ -152,11 +152,11 @@ void FV1::wldr(u32 instruction) {
 
 	switch (osc) {
 	case 0:
-		rmp0_rate = freq;
+		rmp0_rate = (double)freq / 32768.0;
 		rmp0_range = ampValue;
 		break;
 	case 1:
-		rmp1_rate = freq;
+		rmp1_rate = (double)freq / 32768.0;
 		rmp1_range = ampValue;
 		break;
 	default:
@@ -186,13 +186,12 @@ void FV1::cho(Timer* timer, MemoryAddress* memAddress, u32 instruction) {
 	bool na = (flags & 0x20) != 0;
 	double coefficient = 0.5;
 	double rate = 0.0;
-	i32 rampRate = 0;
 
 	assert(!compa); // not implemented yet
 
 	if (isRampOscillator) {
 		range = osc == RMP0 ? rmp0_range : rmp1_range;
-		rampRate = osc == RMP0 ? rmp0_rate : rmp1_rate;
+		rate = osc == RMP0 ? rmp0_rate : rmp1_rate;
 	}
 	if (isSinOscillator) {
 		rate = osc == SIN0 ? sin0_rate : sin1_rate;
@@ -206,17 +205,15 @@ void FV1::cho(Timer* timer, MemoryAddress* memAddress, u32 instruction) {
 			osc_reg = cosine ? cos(w * timer->t) : sin(w * timer->t);
 		}
 		else if (isRampOscillator) {
-			double xrate = (double)rampRate / 32768.0;
 			double x = (double)(timer->sample % range) / (double)range;
-			osc_reg = x * xrate;
+			osc_reg = x * rate;
 			
 		}
 	}
 
 	if (rptr2) {
-		double xrate = (double)rampRate / 32768.0;;
 		double xrptr2 = (double)((timer->sample + range / 2) % range) / (double)range;
-		osc_reg = xrptr2 * xrate;
+		osc_reg = xrptr2 * rate;
 	}
 
 	if (na) {
@@ -338,6 +335,12 @@ double* FV1::getAddressOfIdentifier(string id) {
 	}
 	else if (_stricmp(str, "sin1_range") == 0) {
 		return &sin1_range;
+	}
+	else if (_stricmp(str, "rmp0_rate") == 0) {
+		return &rmp0_rate;
+	}
+	else if (_stricmp(str, "rmp1_rate") == 0) {
+		return &rmp1_rate;
 	}
 	else if (_stricmp(str, "reg0") == 0) {
 		return &reg0;

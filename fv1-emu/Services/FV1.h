@@ -143,8 +143,8 @@ public:
 
 	double sin0_rate;
 	double sin1_rate;
-	i32 rmp0_rate;
-	i32 rmp1_rate;
+	double rmp0_rate;
+	double rmp1_rate;
 
 	double sin0_range;
 	double sin1_range;
@@ -200,8 +200,8 @@ public:
 		sin1_rate = 0.0;
 		sin0_range = 0;
 		sin1_range = 0;
-		rmp0_rate = 0;
-		rmp1_rate = 0;
+		rmp0_rate = 0.0;
+		rmp1_rate = 0.0;
 		rmp0_range = 0;
 		rmp1_range = 0;
 	}
