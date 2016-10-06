@@ -239,7 +239,6 @@ public:
 
 	// misc
 	void updm(Memory* mem);
-	int displacementWithLFO(Timer* timer, double& coefficient, int flags, double rate, double amplitude);
 	double xfadeCoefficientWithRange(u32 sample, u32 range);
 	double xfadeCoefficientWithRange2(u32 sample, u32 range);
 	double xfadeCoefficientWithRange3(u32 sample, u32 range);

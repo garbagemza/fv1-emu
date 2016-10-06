@@ -1,12 +1,31 @@
 #include <Windows.h>
 #include "MemoryManager.h"
 #include "..\Core\types.h"
+#include <exception>
+
+#define MAX_DELAY_SIZE 32768
+double* MemoryManager::mem_ptr = NULL;
+u32 MemoryManager::mem_alloc_ptr = 0;
+
+using namespace std;
+
+void MemoryManager::createMemoryPool() {
+	mem_ptr = new double[MAX_DELAY_SIZE];
+	if (mem_ptr != NULL) {
+		memset(mem_ptr, 0, MAX_DELAY_SIZE * sizeof(double));
+		mem_alloc_ptr = 0;
+	}
+}
 
 Memory* MemoryManager::createMemory(unsigned int size) {
+	if (mem_alloc_ptr + size > MAX_DELAY_SIZE) {
+		throw exception("delay ram exeeded limits.");
+	}
 
-	double* ptr = new double[size];
+	double* ptr = &mem_ptr[mem_alloc_ptr];
 	if (ptr != NULL) {
-		memset(ptr, 0, size * sizeof(double));
+		mem_alloc_ptr += size;
+
 		Memory* mem = new Memory();
 		if (mem != NULL) {
 			mem->head_index = 0;

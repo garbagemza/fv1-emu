@@ -676,6 +676,7 @@ void LoadFile(HANDLE file, FV1* fv1) {
 			// gather all code lines for execution
 			ExecutionVectorResult lexicalResult = parser.beginLexicalAnalysis(lpBuffer, size);
 			if (lexicalResult.success) {
+				MemoryManager::createMemoryPool();
 				// do pass one; gather all delay memory and equates
 				BOOL success = parser.PassOneParse(lexicalResult.firstPass);
 				if (success) {

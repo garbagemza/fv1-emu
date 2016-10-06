@@ -481,27 +481,6 @@ u32 FV1::oscillatorWithIdentifier(string id) {
 	return FV1::SIN0;
 }
 
-// use SIN oscillator as default, this changes if COS is included in flags.
-int FV1::displacementWithLFO(Timer* timer, double& coefficient, int choFlags, double rate, double amplitude) {
-	bool useCosineInsteadSin = false;
-	bool saveToRegister = false;
-	double w = 2.0 * M_PI * rate;
-
-	if (choFlags & CHOFlags::COS) {
-		useCosineInsteadSin = true;
-	}
-
-	if (choFlags & CHOFlags::REG) {
-		osc_reg = useCosineInsteadSin ? cos(w * timer->t) : sin(w * timer->t);
-	}
-
-	double displacementDouble = osc_reg * amplitude;
-	int displacement = static_cast<i32>(displacementDouble);
-	coefficient = displacementDouble - (double)displacement;
-	coefficient = choFlags & CHOFlags::COMPC ? 1.0 - coefficient : coefficient;
-	return displacement;
-}
-
 double FV1::xfadeCoefficientWithRange(u32 sampleNumber, u32 range) {
 
 	u32 x = sampleNumber % range; // get number between 0 and range

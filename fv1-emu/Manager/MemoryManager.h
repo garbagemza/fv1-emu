@@ -1,4 +1,5 @@
 #pragma once
+#include "..\Core\types.h"
 
 struct Memory {
 	double * start_ptr;
@@ -29,6 +30,7 @@ struct MemoryAddress {
 
 class MemoryManager {
 public:
+	static void createMemoryPool();
 	static Memory* createMemory(unsigned int size);
 	static double getValueAtEnd(MemoryAddress* mem);
 	static double getValueAtStart(MemoryAddress* mem);
@@ -36,4 +38,7 @@ public:
 	static void setValueAtStart(Memory* mem, double value);
 	static void updateMemoryPointersIncrementingByOne(Memory* mem);
 
+private:
+	static double* mem_ptr;
+	static u32 mem_alloc_ptr;
 };
