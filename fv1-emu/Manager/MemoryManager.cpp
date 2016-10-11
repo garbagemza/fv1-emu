@@ -80,3 +80,10 @@ void MemoryManager::updateMemoryPointersIncrementingByOne(Memory* mem) {
 	mem->tail_index = new_tail;
 	mem->head_index = new_head;
 }
+
+double MemoryManager::getValueAtAbsolutePosition(u32 position) {
+	if (mem_ptr != NULL) {
+		return mem_ptr[position];
+	}
+	return 0.0;
+}

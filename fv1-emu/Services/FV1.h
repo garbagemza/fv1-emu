@@ -139,8 +139,6 @@ public:
 
 	// oscillators
 	double osc_reg = 0.0; // internal register
-	i32 rmp_reg = 0;
-
 	double sin0_rate;
 	double sin1_rate;
 	double rmp0_rate;
@@ -151,6 +149,7 @@ public:
 	u32 rmp0_range;
 	u32 rmp1_range;
 
+	double addr_ptr = 0;
 	FV1() {
 		pacc = 0;
 		acc = 0;
@@ -207,9 +206,9 @@ public:
 	}
 
 	void mem(Memory** addr, unsigned int size);
+	void rmpa(u32 instruction);
 	void rdax(double regValue, double coefficient);
 	void rda(MemoryAddress* mem, double coefficient);
-
 	void wrap(Memory* mem, double coefficient);
 	void wrax(double* value_addr, double coefficient);
 	void wra(Memory* mem, double coefficient);

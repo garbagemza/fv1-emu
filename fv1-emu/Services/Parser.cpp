@@ -167,6 +167,11 @@ BOOL Parser::LoadInstructionWithInstructionLine(vector<Lexer::Token*> line, unsi
 				instruction->opcode = opcode;
 				return loadCHOWithInstructionLine(line, currentInstruction, instruction);
 			}
+			else if (opcode == RMPA) {
+				line.erase(line.begin() + 0);
+				instruction->opcode = opcode;
+				return loadRMPAWithInstructionLine(line, currentInstruction, instruction);
+			}
 			else if (opcode != UNKNOWN) {
 				line.erase(line.begin() + 0); // remove first element
 				instruction->opcode = opcode;
@@ -293,6 +298,25 @@ BOOL Parser::loadCHOWithInstructionLine(vector<Lexer::Token*> line, unsigned int
 		return false; // expected parameter (lfotype)
 	}
 	return false; // subcode expected
+}
+
+BOOL Parser::loadRMPAWithInstructionLine(vector<Lexer::Token*> line, unsigned int currentInstructionNumber, Instruction* instruction) {
+	u32 inst = RMPA;
+	instruction->opcode = RMPA;
+	inst |= 0x18 << 5;	// value convention
+
+	Param* coefficientParam = GetParameter(line, currentInstructionNumber);
+	if (coefficientParam != NULL) {
+		signed_fp<1, 9> packedCoefficient(coefficientParam->doubleValue);
+		double test = packedCoefficient.doubleValue();
+		i32 coeff = packedCoefficient.raw_data();
+		inst |= ((coeff & 0x7FF) << 21);
+
+		instruction->rawValue = inst;
+		return true;
+	}
+
+	return false;
 }
 
 vector<Param*> Parser::GetParameters(vector<Lexer::Token*> line, unsigned int currentInstruction) {
@@ -497,7 +521,10 @@ MemoryPosition Parser::DirectionSpecificationWithType(Lexer::TOKEN_TYPE& type) {
 }
 
 Opcode Parser::InstructionOpcodeWithString(string& instruction) {
-	if (_stricmp(instruction.c_str(), "rdax") == 0) {
+	if (_stricmp(instruction.c_str(), "rmpa") == 0) {
+		return RMPA;
+	}
+	else if (_stricmp(instruction.c_str(), "rdax") == 0) {
 		return RDAX;
 	}
 	else if (_stricmp(instruction.c_str(), "rda") == 0) {

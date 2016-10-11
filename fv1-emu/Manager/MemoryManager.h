@@ -35,6 +35,7 @@ public:
 	static double getValueAtEnd(MemoryAddress* mem);
 	static double getValueAtStart(MemoryAddress* mem);
 	static double getValueAtMiddle(MemoryAddress* mem);
+	static double getValueAtAbsolutePosition(u32 position);
 	static void setValueAtStart(Memory* mem, double value);
 	static void updateMemoryPointersIncrementingByOne(Memory* mem);
 

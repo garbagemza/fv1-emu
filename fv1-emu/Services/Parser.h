@@ -32,6 +32,7 @@ struct Param
 
 enum Opcode {
 	UNKNOWN,
+	RMPA = 0x01,
 	RDAX,
 	RDA,
 	WRAP,
@@ -48,7 +49,7 @@ enum Opcode {
 	ABSA,
 	WRLX,
 	WRHX,
-	WLDS,
+	WLDS = 0x32,
 	WLDR = 0x12,
 	CHO = 0x14,
 	OR,
@@ -119,6 +120,7 @@ class Parser {
 	BOOL					LoadInstructionWithInstructionLine(vector<Lexer::Token*>, unsigned int, Instruction*);
 	BOOL					loadWLDRWithInstructionLine(vector<Lexer::Token*>, unsigned int, Instruction*);
 	BOOL					loadCHOWithInstructionLine(vector<Lexer::Token*>, unsigned int, Instruction*);
+	BOOL					loadRMPAWithInstructionLine(vector<Lexer::Token*>, unsigned int, Instruction*);
 
 	vector<Param*>			GetParameters(vector<Lexer::Token*> line, unsigned int);
 	Param*					GetParameter(vector<Lexer::Token*>& line, unsigned int);

@@ -449,6 +449,11 @@ GetSampleResult SpinSoundDelegate::getSample(float& left, float& right, unsigned
 BOOL SpinSoundDelegate::ExecuteInstruction(Instruction* inst, unsigned int index, unsigned int & skipLines) {
 
 	switch (inst->opcode) {
+	case RMPA:
+	{
+		fv1->rmpa(inst->rawValue);
+		return true;
+	}
 	case RDAX:
 	{
 		double* regValue = inst->args[0]->regAddress;

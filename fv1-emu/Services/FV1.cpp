@@ -14,6 +14,22 @@ void FV1::mem(Memory** memory, unsigned int size) {
 	*memory = MemoryManager::createMemory(size);
 }
 
+void FV1::rmpa(u32 instruction) {
+	i32 packedCoeff = (instruction >> 21);
+	signed_fp<1, 9> coefficient(packedCoeff);
+	signed_fp<0, 14> ptr(addr_ptr);
+	i32 rawPtr = ptr.raw_data();
+	if (rawPtr >= 0 && rawPtr < 32768) {
+		double memValue = MemoryManager::getValueAtAbsolutePosition(ptr.raw_data());
+		lr = memValue;
+		pacc = acc;
+		acc = acc + memValue * coefficient.doubleValue();
+	}
+	else {
+		assert("Invalid addr_ptr value");
+	}
+}
+
 //Read register value, multiply by coefficient and add to ACC.
 void FV1::rdax(double regValue, double coefficient) {
 	//Previous ACC value is simultaneously loaded into PACC
@@ -341,6 +357,9 @@ double* FV1::getAddressOfIdentifier(string id) {
 	}
 	else if (_stricmp(str, "rmp1_rate") == 0) {
 		return &rmp1_rate;
+	}
+	else if (_stricmp(str, "addr_ptr") == 0) {
+		return &addr_ptr;
 	}
 	else if (_stricmp(str, "reg0") == 0) {
 		return &reg0;
