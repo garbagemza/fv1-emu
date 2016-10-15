@@ -239,7 +239,8 @@ void FV1::cho(Timer* timer, MemoryAddress* memAddress, u32 instruction) {
 	else {
 		double displacementDouble = osc_reg * (double)range;
 		displacement = static_cast<i32>(displacementDouble);
-		coefficient = displacementDouble - (double)displacement;
+		// TODO: change coefficient calculation and avoid introducing artifacts.
+		//coefficient = displacementDouble - (double)displacement;
 	}
 
 	if (compc) {
