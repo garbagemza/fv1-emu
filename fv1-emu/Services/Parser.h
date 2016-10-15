@@ -45,19 +45,20 @@ enum Opcode {
 	SOF,
 	MAXX,
 	LDAX,
+	AND = 0x0E,
 	SKP,
 	ABSA,
-	WRLX,
-	WRHX,
 	WLDS = 0x32,
 	WLDR = 0x12,
 	CHO = 0x14,
+	WRHX,
+	WRLX,
 	OR,
-	AND,
 	XOR,
 	CHO_RDA = 0x50,
 	CHO_SOF = 0x51,
-	CHO_RDAL = 0x52
+	CHO_RDAL = 0x52,
+	CLR = 0x53
 };
 
 
@@ -121,6 +122,8 @@ class Parser {
 	BOOL					loadWLDRWithInstructionLine(vector<Lexer::Token*>, unsigned int, Instruction*);
 	BOOL					loadCHOWithInstructionLine(vector<Lexer::Token*>, unsigned int, Instruction*);
 	BOOL					loadRMPAWithInstructionLine(vector<Lexer::Token*>, unsigned int, Instruction*);
+	BOOL					loadANDWithInstructionLine(vector<Lexer::Token*>, unsigned int, Instruction*);
+	BOOL					loadCLRWithInstructionLine(vector<Lexer::Token*>, unsigned int, Instruction*);
 
 	vector<Param*>			GetParameters(vector<Lexer::Token*> line, unsigned int);
 	Param*					GetParameter(vector<Lexer::Token*>& line, unsigned int);

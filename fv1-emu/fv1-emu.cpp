@@ -595,7 +595,7 @@ BOOL SpinSoundDelegate::ExecuteInstruction(Instruction* inst, unsigned int index
 	}
 	case AND:
 	{
-		fv1->and(inst->args[0]->unsignedIntValue);
+		fv1->and(inst->rawValue);
 		return true;
 	}
 	case XOR:

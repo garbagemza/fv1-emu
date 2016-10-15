@@ -158,22 +158,27 @@ BOOL Parser::LoadInstructionWithInstructionLine(vector<Lexer::Token*> line, unsi
 		if (type == Lexer::TOKEN_TYPE::IDENTIFIER) {
 			string inst = line[0]->name;
 			Opcode opcode = InstructionOpcodeWithString(inst);
+			line.erase(line.begin() + 0);
 			if (opcode == WLDR) {
-				line.erase(line.begin() + 0);
 				return loadWLDRWithInstructionLine(line, currentInstruction, instruction);
 			}
 			else if (opcode == CHO) {
-				line.erase(line.begin() + 0);
 				instruction->opcode = opcode;
 				return loadCHOWithInstructionLine(line, currentInstruction, instruction);
 			}
 			else if (opcode == RMPA) {
-				line.erase(line.begin() + 0);
 				instruction->opcode = opcode;
 				return loadRMPAWithInstructionLine(line, currentInstruction, instruction);
 			}
+			else if (opcode == AND) {
+				instruction->opcode = opcode;
+				return loadANDWithInstructionLine(line, currentInstruction, instruction);
+			}
+			else if (opcode == CLR) {
+				instruction->opcode = opcode;
+				return loadCLRWithInstructionLine(line, currentInstruction, instruction);
+			}
 			else if (opcode != UNKNOWN) {
-				line.erase(line.begin() + 0); // remove first element
 				instruction->opcode = opcode;
 				vector<Param*> params = GetParameters(line, currentInstruction);
 
@@ -319,6 +324,27 @@ BOOL Parser::loadRMPAWithInstructionLine(vector<Lexer::Token*> line, unsigned in
 	return false;
 }
 
+BOOL Parser::loadANDWithInstructionLine(vector<Lexer::Token*> line, unsigned int currentInstructionNumber, Instruction* instruction) {
+	u32 inst = AND;
+	instruction->opcode = AND;
+
+	Param* maskParam = GetParameter(line, currentInstructionNumber);
+	if (maskParam != NULL) {
+		u32 value = maskParam->unsignedIntValue;
+		inst |= ((value & 0xFFFFFF) << 8);
+		instruction->rawValue = inst;
+		return true;
+	}
+	return false;
+}
+
+// this is a pseudo opcode, it is mapped into and
+BOOL Parser::loadCLRWithInstructionLine(vector<Lexer::Token*> line, unsigned int currentInstructionNumber, Instruction* instruction) {
+	u32 inst = AND;
+	instruction->opcode = AND;
+	instruction->rawValue = inst;
+	return true;
+}
 vector<Param*> Parser::GetParameters(vector<Lexer::Token*> line, unsigned int currentInstruction) {
 	vector<Param*> parameters;
 	Param* param = GetParameter(line, currentInstruction);
@@ -589,6 +615,9 @@ Opcode Parser::InstructionOpcodeWithString(string& instruction) {
 	}
 	else if (_stricmp(instruction.c_str(), "xor") == 0) {
 		return XOR;
+	}
+	else if (_stricmp(instruction.c_str(), "clr") == 0) {
+		return CLR;
 	}
 	else {
 		return UNKNOWN;

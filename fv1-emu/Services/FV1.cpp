@@ -277,12 +277,12 @@ void FV1::or(unsigned int value) {
 	acc = hex2s23(hexAcc);
 }
 
-void FV1::and(unsigned int value) {
+void FV1::and(u32 instruction) {
+	u32 value = (instruction >> 8) & 0xFFFFFF;
 	pacc = acc;
 	unsigned int hexAcc = s23tohex(acc);
 	hexAcc &= value;
 	acc = hex2s23(hexAcc);
-
 }
 
 void FV1::xor(unsigned int value) {
