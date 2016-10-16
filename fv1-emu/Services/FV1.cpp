@@ -263,7 +263,18 @@ void FV1::cho(Timer* timer, MemoryAddress* memAddress, u32 instruction) {
 		}
 		break;
 	case 3: // rdal
-		assert(false); // not implemented yet
+		{
+			double lfoValue = 0.0;
+			if (isSinOscillator) {
+				lfoValue = sin(w * timer->t);
+			}
+			else if (isRampOscillator) {
+				double x = (double)(timer->sample % range) / (double)range;
+				lfoValue = x * rate;
+
+			}
+			rdal(lfoValue);
+		}
 		break;
 	default:
 		assert(false); // not implemented yet
@@ -291,6 +302,11 @@ void FV1::xor(unsigned int value) {
 	unsigned int hexAcc = s23tohex(acc);
 	hexAcc ^= value;
 	acc = hex2s23(hexAcc);
+}
+
+void FV1::rdal(double lfoValue) {
+	pacc = acc;
+	acc = lfoValue;
 }
 
 bool FV1::zrc() {

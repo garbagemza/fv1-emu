@@ -296,6 +296,11 @@ BOOL Parser::loadCHOWithInstructionLine(vector<Lexer::Token*> line, unsigned int
 					}
 					return false; // invalid range, expected cho flags
 				}
+				// is rdal?
+				if (choSubcode == 3) { 
+					instruction->rawValue = inst;
+					return true;
+				}
 				return false; // invalid param, expected cho flags
 			}
 			return false; // invalid param, expected (sin0, sin1, rmp0, rmp1)

@@ -225,6 +225,7 @@ public:
 	void wlds(u32 osc, double frequencyCoefficient, double amplitudeCoefficient);
 	void wldr(u32 instruction);
 	void cho(Timer* timer, MemoryAddress* memAddress, u32 instruction);
+	void rdal(double oscValue);
 
 	void or(unsigned int value);
 	void and(unsigned int value);
