@@ -269,9 +269,10 @@ void FV1::cho(Timer* timer, MemoryAddress* memAddress, u32 instruction) {
 				lfoValue = sin(w * timer->t);
 			}
 			else if (isRampOscillator) {
-				double x = (double)(timer->sample % range) / (double)range;
-				lfoValue = x * rate;
-
+				double freq = 2.0 * rate * 32768.0;
+				double tp = timer->t * freq;
+				double oscOutput = (tp - floor((1.0 / 2.0) + tp));
+				lfoValue = (0.5 + oscOutput) / 2.0;
 			}
 			rdal(lfoValue);
 		}

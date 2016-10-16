@@ -413,7 +413,7 @@ GetSampleResult SpinSoundDelegate::getSample(float& left, float& right, unsigned
 	//double leftright = 0.707 * SoundUtilities::sampleWithTime(generator, timer);
 	fv1->adcl = left;
 	fv1->adcr = right;
-		
+	
 	if (spinLoaded) {
 
 		for (unsigned int i = 0; i < instructionCount; i++) {
